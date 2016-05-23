@@ -1,0 +1,17 @@
+#LXMacro#
+tool.set center.local on
+tool.set axis.select on
+tool.set TransformScale on
+#Command Block Begin:  ToolAdjustment
+   tool.setAttr xfrm.transform TX 0.0
+   tool.setAttr xfrm.transform TY 0.0
+   tool.setAttr xfrm.transform TZ 0.0
+   tool.setAttr xfrm.transform RX 0.0
+   tool.setAttr xfrm.transform RY 0.0
+   tool.setAttr xfrm.transform RZ 0.0
+   tool.setAttr xfrm.transform SX 1.0
+   tool.setAttr xfrm.transform SY 1.0
+   tool.setAttr xfrm.transform SZ 1.0
+   tool.setAttr xfrm.transform U 0.0
+#Command Block End:  ToolAdjustment
+tool.doApply

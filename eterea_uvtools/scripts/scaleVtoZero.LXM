@@ -1,0 +1,9 @@
+#LXMacro#
+tool.attr xfrm.transform SY 0.0
+tool.doApply
+tool.set TransformScale off 0
+tool.set axis.origin off 0
+tool.set axis.local off 0
+tool.set axis.select off 0
+tool.set center.local off 0
+select.drop edge
