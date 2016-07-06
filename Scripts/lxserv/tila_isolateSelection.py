@@ -47,10 +47,11 @@ class CmdTila_isolateSelection(lxu.command.BasicCommand):
         polygonIsSelected = False
 
         for item in self.selection:
-            if len(item.geometry.polygons.selected) < 1:
-                polygonIsSelected = polygonIsSelected or False
-            else:
-                polygonIsSelected = polygonIsSelected or True
+            if item.type == 'mesh':
+                if len(item.geometry.polygons.selected) < 1:
+                    polygonIsSelected = polygonIsSelected or False
+                else:
+                    polygonIsSelected = polygonIsSelected or True
 
         return polygonIsSelected
 
@@ -58,10 +59,11 @@ class CmdTila_isolateSelection(lxu.command.BasicCommand):
         edgeIsSelected = False
 
         for item in self.selection:
-            if len(item.geometry.edges.selected) < 1:
-                edgeIsSelected = edgeIsSelected or False
-            else:
-                edgeIsSelected = edgeIsSelected or True
+            if item.type == 'mesh':
+                if len(item.geometry.edges.selected) < 1:
+                    edgeIsSelected = edgeIsSelected or False
+                else:
+                    edgeIsSelected = edgeIsSelected or True
 
         return edgeIsSelected
 
@@ -69,15 +71,29 @@ class CmdTila_isolateSelection(lxu.command.BasicCommand):
         vertexIsSelected = False
 
         for item in self.selection:
-            if len(item.geometry.vertices.selected) < 1:
-                vertexIsSelected = vertexIsSelected or False
-            else:
-                vertexIsSelected = vertexIsSelected or True
+            if item.type == 'mesh':
+                if len(item.geometry.vertices.selected) < 1:
+                    vertexIsSelected = vertexIsSelected or False
+                else:
+                    vertexIsSelected = vertexIsSelected or True
 
         return vertexIsSelected
 
+    def noMeshItemSelected(self):
+        noMeshSelected = True
+
+        for item in self.selection:
+            if item.type == 'mesh':
+                noMeshSelected = noMeshSelected and False
+            else:
+                noMeshSelected = noMeshSelected and True
+
+        return noMeshSelected
+
+
+
     def basic_Execute(self, msg, flags):
-        if len(self.selection) == 0:
+        if len(self.selection) == 0 or self.noMeshItemSelected():
             self.scn.select(self.scn.items())
 
             self.isolateSelection()
