@@ -25,8 +25,8 @@ class CmdTila_isolateSelection(lxu.command.BasicCommand):
 
         self.commands = ('hide.sel', 'hide.invert')
 
-        self.scn = modo.Scene()
-        self.selection = self.scn.selected
+        self.scn = None
+        self.selection = None
 
     def cmd_Flags(self):
         return lx.symbol.fCMD_MODEL | lx.symbol.fCMD_UNDO
@@ -93,6 +93,9 @@ class CmdTila_isolateSelection(lxu.command.BasicCommand):
 
 
     def basic_Execute(self, msg, flags):
+        self.scn = modo.Scene()
+        self.selection = self.scn.selected
+
         if len(self.selection) == 0 or self.noMeshItemSelected():
             self.scn.select(self.scn.items())
 
