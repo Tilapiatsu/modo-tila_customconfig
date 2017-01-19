@@ -1,0 +1,8 @@
+#LXMacro#
+vert.set x 0.0
+delete
+tool.set *.mirror on
+tool.attr gen.mirror axis 0
+tool.attr gen.mirror cenX 0.0
+tool.apply
+tool.set *.mirror off
