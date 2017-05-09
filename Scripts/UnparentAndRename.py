@@ -13,4 +13,5 @@ for o in selection:
 			c.setParent()
 			c.name = newName
 		scn.select(o)
-		lx.eval('delete')	
+		lx.eval('delete')
+
