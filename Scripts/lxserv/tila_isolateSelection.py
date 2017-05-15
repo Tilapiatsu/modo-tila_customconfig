@@ -140,8 +140,8 @@ class CmdTila_isolateSelection(lxu.command.BasicCommand):
 				NoCompatibleSelected = False
 				break
 
-			print item.name
-			print NoCompatibleSelected
+			#print item.name
+			#print NoCompatibleSelected
 
 		return NoCompatibleSelected
 
@@ -154,11 +154,12 @@ class CmdTila_isolateSelection(lxu.command.BasicCommand):
 	    self.scn = modo.Scene()
 	    self.selection = self.scn.selected
 
-	    if len(self.selection) == 0:
+	    if len(self.selection) == 0: #No item selected
 	        self.scn.select(self.scn.items())
 	        self.isolateSelection()
-	    else:
-	        if lx.eval('select.typeFrom item;pivot;center;edge;polygon;vertex;ptag ?'):
+	    else: #At least one item selected
+	        if lx.eval('select.typeFrom item;pivot;center;edge;polygon;vertex;ptag ?'): #Item Mode
+				#print 'item mode'
 				if self.IncompatibleItemSelected() and self.NoCompatibleItemSelected():
 					self.scn.select(self.scn.items())
 					self.isolateSelection()
@@ -175,28 +176,32 @@ class CmdTila_isolateSelection(lxu.command.BasicCommand):
 					lx.eval('unhide')
 					lx.eval('hide.unsel')
 
-	        elif lx.eval('select.typeFrom polygon;edge;vertex;item;pivot;center;ptag ?'):
-	            if self.isPolygonSelected():
-	                lx.eval('hide.unsel')
-	            else:
-	                lx.eval('unhide')
+	        elif lx.eval('select.typeFrom polygon;edge;vertex;item;pivot;center;ptag ?'): #Polygon Mode
+				#print 'polygon mode'
+				if self.isPolygonSelected():
+				    print 'isolate'
+				    lx.eval('hide.unsel')
+				else:
+				    lx.eval('unhide')
 
-	        elif lx.eval('select.typeFrom edge;vertex;polygon;item;pivot;center;ptag ?'):
-	            if self.isEdgeSelected():
-	                lx.eval('select.expand')
-	                lx.eval('select.convert polygon')
-	                lx.eval('hide.unsel')
-	            else:
-	                lx.eval('unhide')
+	        elif lx.eval('select.typeFrom edge;vertex;polygon;item;pivot;center;ptag ?'): #Edge Mode
+				#print 'edge mode'
+				if self.isEdgeSelected():
+				    lx.eval('select.expand')
+				    lx.eval('select.convert polygon')
+				    lx.eval('hide.unsel')
+				else:
+				    lx.eval('unhide')
 
-	        elif lx.eval('select.typeFrom vertex;edge;polygon;item;pivot;center;ptag ?'):
-	            if self.isVertexSelected():
-	                lx.eval('select.expand')
-	                lx.eval('select.expand')
-	                lx.eval('select.convert polygon')
-	                lx.eval('hide.unsel')
-	            else:
-	                lx.eval('unhide')
+	        elif lx.eval('select.typeFrom vertex;edge;polygon;item;pivot;center;ptag ?'): #Vertex Mode
+				#print 'vertex mode'
+				if self.isVertexSelected():
+				    lx.eval('select.expand')
+				    lx.eval('select.expand')
+				    lx.eval('select.convert polygon')
+				    lx.eval('hide.unsel')
+				else:
+				    lx.eval('unhide')
 
 	def cmd_Query(self, index, vaQuery):
 	    lx.notimpl()
