@@ -19,8 +19,7 @@ selType = lx.eval1('query layerservice selmode ?')
 
 if selType == 'polygon':
 	p_hover = lx.eval1('query view3dservice element.over ? poly')
-	p_sel = lx.evalN('query layerservice polys ? selected')
-	print p_sel
+	p_sel = lx.evalN('query layerservice uv ? selected')
 	if isinstance(p_hover, str):
 		selectConectedUV()
 	else:
