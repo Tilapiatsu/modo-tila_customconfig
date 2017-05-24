@@ -2,18 +2,9 @@
 
 import lx
 
-def selectConectedUV(vertex=False):
+def selectConectedUV():
 	lx.eval('!!select.3DElementUnderMouse set')
-
-	if vertex:
-		lx.eval('select.expand uv')
-		lx.eval('select.expand uv')
-		lx.eval('select.convert polygon')
-
 	lx.eval('ffr.selectconnecteduv')
-
-	if vertex:
-		lx.eval('select.convert vertex')
 
 selType = lx.eval1('query layerservice selmode ?')
 
@@ -29,22 +20,21 @@ if selType == 'polygon':
 			lx.eval('select.all')
 
 elif selType == 'edge':
-	e_hover = lx.eval1('query view3dservice element.over ? edge')
+	lx.eval('select.type polygon')
+	e_hover = lx.eval1('query view3dservice element.over ? poly')
 	if isinstance(e_hover, str):
 		selectConectedUV()
 	else:
 		lx.eval('select.all')
 
-
-
-
-'''
 elif selType == 'vertex':
-	v_hover = lx.eval1('query view3dservice element.over ? vert')
+	lx.eval('select.type polygon')
+	v_hover = lx.eval1('query view3dservice element.over ? poly')
 	if isinstance(v_hover, str):
-		selectConectedUV(True)
+		selectConectedUV()
 	else:
 		lx.eval('select.all')
+'''
 if selType == 'item':
 	i_hover = lx.eval1('query view3dservice element.over ? item')
 '''
