@@ -1,0 +1,15 @@
+#LXMacro#
+tool.set *.bevel on
+tool.attr poly.bevel shift 0.0
+tool.attr poly.bevel inset 0.01
+tool.apply
+tool.set TransformNormalsLocal on
+tool.noChange
+tool.attr xfrm.transform normal edit
+tool.attr xfrm.transform TZ 100.0
+tool.doApply
+select.nextMode
+@UnwrapNRelax.py
+@move1step_uv.py 1 0
+#hide.sel
+
