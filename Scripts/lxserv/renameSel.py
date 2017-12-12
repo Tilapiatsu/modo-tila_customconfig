@@ -46,7 +46,11 @@ class RenameSel(lxu.command.BasicCommand):
             if prompt_String != '':
                 prompt_String = self.returnSafeString(sVal=prompt_String)
                 if prompt_String:
-                    self.current_Selection.SetName(prompt_String)
+                    scn_svc = lx.service.Scene()
+                    if scn_svc.ItemTypeName(self.current_Selection.Type()) == 'mask': # is selection is type : Material
+                        lx.eval('material.reassign {} {}'.format(self.current_Selection.UniqueName().split('(')[0], prompt_String))
+                    else:
+                        self.current_Selection.SetName(prompt_String)
 
         else:
             return
