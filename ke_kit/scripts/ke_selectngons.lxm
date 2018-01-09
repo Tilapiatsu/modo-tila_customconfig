@@ -1,0 +1,10 @@
+#LXMacro#
+select.connect
+select.polygon remove vertex curve 4
+select.polygon remove vertex curve 3
+select.polygon remove vertex curve 2
+select.polygon remove vertex curve 1
+@AddBoundary.py 
+
+
+

@@ -1,0 +1,5 @@
+#LXMacro#
+select.convert vertex
+vert.center all
+escape
+select.typeFrom polygon

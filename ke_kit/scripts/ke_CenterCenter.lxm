@@ -1,0 +1,4 @@
+#LXMacro#
+select.typeFrom item
+center.bbox center
+select.typeFrom item

@@ -1,0 +1,12 @@
+#LXMacro#
+select.connect
+poly.convert face psubdiv true
+select.polygon remove vertex curve 4
+select.polygon remove vertex curve 3
+select.polygon remove vertex curve 2
+select.polygon remove vertex curve 1
+tool.set vertMap.setWeight on
+tool.attr vertMap.setWeight weight 0.3
+tool.doApply
+tool.set vertMap.setWeight off
+
