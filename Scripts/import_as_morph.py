@@ -117,9 +117,7 @@ def get_matching_item(source_arr, imported_item, skipped_item_dict):
 	for item in source_arr:
 		item_name = item.name + '_' + imported_item.name.split('_')[-1:][0]
 		if imported_item.name == item_name:
-			print_log('Matching name = {}'.format(item_name))
 			if item.type == 'mesh':
-				print_log('Matching type = {}'.format(item.type))
 				return item
 			else:
 				print_log('{} is type of {}. No Match'.format(item.name, item.type))
@@ -185,7 +183,7 @@ if __name__ == '__main__':
 
 							matching_vertex_map_name = False
 							for vmap in matching_source_item.geometry.vmaps.morphMaps:
-								if vmap == vertex_map_name:
+								if vmap.name == vertex_map_name:
 									matching_vertex_map_name = True
 							if not matching_vertex_map_name:
 								print_log('No matching morph map found! Creating a "{}" morph map'.format(vertex_map_name))
@@ -205,15 +203,15 @@ if __name__ == '__main__':
 					lx.eval('!!item.delete')
 					print_log('Delete imported scene : {}'.format(imported_scene_root.name))
 
-					if len(skipped_item_dict) == 0 :
-						print_log('Importing done with no error')
-					else:
-						print_log('Importing done with {} error'.format(len(skipped_item_dict)))
-						for key in skipped_item_dict.keys():
-							print_log('{} item has been skipped because : \n {}'.format(key, skipped_item_dict[key]))
-
 				else:
 					print_log('No groupLocator named {} found ! \n \n Skipping file !'.format(filename))
+
+			if len(skipped_item_dict) == 0 :
+				print_log('Importing done with no error')
+			else:
+				print_log('Importing done with {} error'.format(len(skipped_item_dict)))
+				for key in skipped_item_dict.keys():
+					print_log('{} item has been skipped because : \n {}'.format(key, skipped_item_dict[key]))
 	else:
 		init_message('error', 'No groupLocator selected', 'At leat one "groupLocator" item has to be selected')
 
