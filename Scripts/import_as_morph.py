@@ -143,10 +143,15 @@ if __name__ == '__main__':
 	group_locator = filter_arr_of_type(item_to_proceed, 'groupLocator')
 	group_locator_name = get_name_of_arr(group_locator)
 
+	mesh_item = filter_arr_of_type(item_to_proceed, 'mesh')
+	mesh_item_name = get_name_of_arr(mesh_item)
+
 	group_locator_dict = construct_item_dict(group_locator)
+	mesh_item_dict = construct_item_dict(mesh_item)
+
 	path = r'C:\Users\lboucher\Documents\3dsMax\export\NewBodyPose'
 
-	if len(group_locator): # at least one group locator item selected
+	if len(group_locator): # at least one group locator or mesh item item selected
 		
 		init_dialog("input", path, 'fbx')
 
@@ -179,7 +184,7 @@ if __name__ == '__main__':
 
 							scn.select(matching_source_item)
 
-							vertex_map_name = 'Conformed'
+							vertex_map_name = 'tila_Conformed'
 
 							matching_vertex_map_name = False
 							for vmap in matching_source_item.geometry.vmaps.morphMaps:
@@ -195,6 +200,7 @@ if __name__ == '__main__':
 							lx.eval('vertMap.applyMorph {} 1.0'.format(vertex_map_name))
 							lx.eval('select.vertexMap {} morf replace'.format(vertex_map_name))
 							lx.eval('vertMap.clear morf')
+							lx.eval('vertMap.delete morf')
 							print_log('Updating {} morph map for {}'.format(vertex_map_name, matching_source_item.name))
 
 							lx.eval('unhide')
