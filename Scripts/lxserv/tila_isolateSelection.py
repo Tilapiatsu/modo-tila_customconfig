@@ -669,7 +669,7 @@ class CmdTila_isolateSelection(lxu.command.BasicCommand):
 
 		for item in self.selection:
 			if item.type not in self.compatibleItem:
-				print "Incompatible type = " + o
+				# print "Incompatible type = " + o
 				IncompatibleSelected = True
 				break
 			else:
