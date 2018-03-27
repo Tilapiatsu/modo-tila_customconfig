@@ -32,38 +32,48 @@ class CmdMyCustomCommand(lxu.command.BasicCommand):
 		self.dyna_Add('passgroup_name', lx.symbol.sTYPE_STRING)
 		# self.basic_SetFlags (0, lx.symbol.fCMDARG_OPTIONAL)
 
-		self.dyna_Add('trim_item_name', lx.symbol.sTYPE_BOOLEAN)
-		# self.basic_SetFlags (1, lx.symbol.fCMDARG_OPTIONAL)
+		self.dyna_Add('prefix', lx.symbol.sTYPE_STRING)
+		self.basic_SetFlags (1, lx.symbol.fCMDARG_OPTIONAL)
 
-		self.dyna_Add('item_name_trim_separator', lx.symbol.sTYPE_STRING)
+		self.dyna_Add('suffix', lx.symbol.sTYPE_STRING)
 		self.basic_SetFlags (2, lx.symbol.fCMDARG_OPTIONAL)
 
-		self.dyna_Add('item_name_trim_range', lx.symbol.sTYPE_STRING)
-		self.basic_SetFlags (3, lx.symbol.fCMDARG_OPTIONAL)
+		self.dyna_Add('trim', lx.symbol.sTYPE_BOOLEAN)
+		# self.basic_SetFlags (1, lx.symbol.fCMDARG_OPTIONAL)
+
+		self.dyna_Add('trim_separator', lx.symbol.sTYPE_STRING)
+		self.basic_SetFlags (4, lx.symbol.fCMDARG_OPTIONAL)
+
+		self.dyna_Add('trim_range', lx.symbol.sTYPE_STRING)
+		self.basic_SetFlags (5, lx.symbol.fCMDARG_OPTIONAL)
 
 		self.scn = modo.Scene()
 		self.renderpass_groups = self.get_renderpass_groups()
 		self.current_renderpass_group = self.get_current_renderpass_group()
 
-		self.suffix = '_RP'
+		#DefaultValue
+		self.prefix = ''
+		self.suffix = ''
 
 	def arg_UIHints (self, index, hints):
 		if index == 0:
 			hints.Label('PassGroup Name')
 		if index == 1:
-			hints.Label('Trim Item Name')
+			hints.Label('PassName Prefix')
 		if index == 2:
-			hints.Label('Trim Separator')
+			hints.Label('PassName Suffix')
 		if index == 3:
+			hints.Label('Trim Item Name')
+		if index == 4:
+			hints.Label('Trim Separator')
+		if index == 5:
 			hints.Label('Trim Range')
 
 	def cmd_ArgEnable (self, index):
-		if self.dyna_IsSet(0):
-			if self.current_renderpass_group is not None and index == 0:
-				lx.throw(lx.symbol.e_CMD_DISABLED)
-		if self.dyna_IsSet(1):
-			if not self.dyna_Bool(1) and index > 1:
-				lx.throw(lx.symbol.e_CMD_DISABLED)
+		#if self.current_renderpass_group is not None and index == 0:
+		#	lx.throw(lx.symbol.e_CMD_DISABLED)
+		if not self.dyna_Bool(3) and index > 3:
+			lx.throw(lx.symbol.e_CMD_DISABLED)
 		return lx.symbol.e_OK
 
 # Command list interface.
@@ -122,30 +132,43 @@ class CmdMyCustomCommand(lxu.command.BasicCommand):
 
 	def basic_Execute(self, msg, flags):
 		try:
-
-			trim_sw = self.dyna_Bool(1)
-			trim_separator = self.dyna_String(2)
-			trim_range = self.dyna_String(3)
+			renderpass_group_name = self.dyna_String(0)
+			trim_sw = self.dyna_Bool(3)
+			trim_separator = self.dyna_String(4)
+			trim_range = self.dyna_String(5)
 
 			compatible_selection = self.get_compatible_type(self.scn.selected)
 			if not len(compatible_selection):
 				modo.dialogs.alert('No compatible item selected', 'please select at least one item of type {}'.format(self.construct_type_string()))
 
-			# Define the current passgroup
 			if self.current_renderpass_group is None:
-				renderpass_group_exist = False
-				for rpg in self.renderpass_groups:
-					if self.dyna_String(0) == rpg.name:
-						renderpass_group_exist = True
-						break
-
-				if not renderpass_group_exist: # No pass group found : create one with the name specify by the user
-					self.current_renderpass_group = modo.item.RenderPassGroup(self.scn.addGroup(self.dyna_String(0),'render'))
-					self.current_renderpass_group.select()
-				else: # set pass group to the one founded
-					self.current_renderpass_group = modo.item.RenderPassGroup(self.dyna_String(0))
-					self.current_renderpass_group.select()
+				create_renderpass_group = True
+			else:
+				if renderpass_group_name in [rpg.name for rpg in self.renderpass_groups]:
+					create_renderpass_group = False
+				else:
+					if not self.dyna_IsSet(0) or (self.dyna_IsSet(0) and self.dyna_String(0) == ''):
+						create_renderpass_group = False
+					else:
+						create_renderpass_group = True
+				
+			if create_renderpass_group: # No pass group found : create one with the name specify by the user
+				self.current_renderpass_group = modo.item.RenderPassGroup(self.scn.addGroup(renderpass_group_name,'render'))
+				self.current_renderpass_group.select()
+			else: # set pass group to the one founded
+				self.current_renderpass_group = modo.item.RenderPassGroup(self.current_renderpass_group.name)
+				self.current_renderpass_group.select()
 			
+
+			if self.dyna_IsSet(1):
+				self.prefix = self.dyna_String(1)
+			else:
+				self.prefix = ''
+
+			if self.dyna_IsSet(2):
+				self.suffix = self.dyna_String(2)
+			else:
+				self.suffix = ''
 
 			# Create Passes Loop
 			for item in compatible_selection:
@@ -154,7 +177,10 @@ class CmdMyCustomCommand(lxu.command.BasicCommand):
 				else:
 					trimed_name = item.name
 
-				passe_name = trimed_name + self.suffix
+				passe_name = self.prefix + trimed_name + self.suffix
+
+				if passe_name in [i.name for i in self.scn.items()]: # Avoiding name conflict with other Items
+					passe_name = passe_name + '_RP'
 
 				if passe_name not in [passe.name for passe in self.current_renderpass_group.passes]:
 					# add a passe named like the selected object
