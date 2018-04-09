@@ -5,6 +5,7 @@
 
 # Packaged by Cristobal Vila [http://www.etereaestudios.com]
 # to form part of the Eterea UV Tools, distributed free.
+# October 2017: small update by Cristobal Vila to make compatible with Modo 11.x
 
 import lx
 
@@ -25,12 +26,12 @@ def uvtrans(du,dv):
 	lx.eval("tool.setAttr xfrm.transform TX [0 m]")
 	lx.eval("tool.setAttr xfrm.transform TY [0 m]")
 	lx.eval("tool.setAttr xfrm.transform TZ [0 m]")
-	lx.eval("tool.setAttr xfrm.transform RX [0.0 ß]")
-	lx.eval("tool.setAttr xfrm.transform RY [0.0 ß]")
-	lx.eval("tool.setAttr xfrm.transform RZ [0.0 ß]")
-	lx.eval("tool.setAttr xfrm.transform SX [100.0 %]")
-	lx.eval("tool.setAttr xfrm.transform SY [100.0 %]")
-	lx.eval("tool.setAttr xfrm.transform SZ [100.0 %]")
+	lx.eval("tool.setAttr xfrm.transform RX [0.0]")
+	lx.eval("tool.setAttr xfrm.transform RY [0.0]")
+	lx.eval("tool.setAttr xfrm.transform RZ [0.0]")
+	lx.eval("tool.setAttr xfrm.transform SX [100.0]")
+	lx.eval("tool.setAttr xfrm.transform SY [100.0]")
+	lx.eval("tool.setAttr xfrm.transform SZ [100.0]")
 	lx.eval("tool.setAttr xfrm.transform U [0.0]")
 	lx.eval("tool.setAttr xfrm.transform V [0.0]")
 	lx.eval("tool.doApply")

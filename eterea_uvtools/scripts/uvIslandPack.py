@@ -2,9 +2,9 @@
 #
 # UVIslandPack
 #
-# Author: Mark Rossi
-# Version: .3
-# Compatibility: Modo 401
+# Author: Mark Rossi (small update by Cristobal Vila for Modo 11.x)
+# Version: .4
+# Compatibility: Modo 11.x
 #
 # Purpose: To fit every UV island in the selected UV map to 0-1 range and then array them in a grid so that each island has its own
 #          discrete range in UV space.
@@ -32,7 +32,7 @@ lx.eval("tool.set actr.auto on")
 while unproc:
 	lx.eval("select.element %s polygon set %s" %(layer, unproc[0]))
 	lx.eval("select.polygonConnect uv")
-	lx.eval("uv.fit false")
+	lx.eval("uv.fit entire true") # October 2017: This changed. It previously was 'uv.fit false'
 	lx.eval("tool.set TransformScale on")
 	lx.eval("tool.viewType uv")
 	lx.eval("tool.setAttr xfrm.transform SX %s" %(1.0 - pad))
