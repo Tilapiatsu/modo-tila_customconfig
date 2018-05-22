@@ -25,7 +25,7 @@ compatibleItemType = {'MESH': 'mesh',
 					  'GROUP_LOCATOR': 'groupLocator',
 					  'LOCATOR': 'locator'}
 
-class CmdMyCustomCommand(lxu.command.BasicCommand):
+class CmdCreateRenderpassesFromSelection(lxu.command.BasicCommand):
 	def __init__(self):
 		lxu.command.BasicCommand.__init__(self)
 
@@ -235,4 +235,4 @@ class CmdMyCustomCommand(lxu.command.BasicCommand):
 		lx.notimpl()
 
 
-lx.bless(CmdMyCustomCommand, "tila.createRenderpassesFromSelection")
+lx.bless(CmdCreateRenderpassesFromSelection, "tila.createRenderpassesFromSelection")
