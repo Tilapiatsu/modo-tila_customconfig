@@ -2,7 +2,7 @@
 import modo, lx
 import os, sys
 
-rootPath
+rootPath = ''
 
 lx.eval('dialog.setup dir')
 lx.eval('dialog.title "Open Path"')
@@ -15,7 +15,7 @@ except:
 	sys.exit()
 else:
 	root = lx.eval1('dialog.result ?')
-
+	i=0
 	for dirname, dirnames, filenames in os.walk(root):
 		
 		for f in filenames:
@@ -23,7 +23,12 @@ else:
 			ext = os.path.splitext(filepath)[1]
 			if ext.lower() == '.obj':
 				lx.out('importing {}'.format(f))
-				lx.eval('!!scene.open "{}" import'.format(filepath))
+				if i==0:
+					lx.eval('scene.open "{}" import'.format(filepath))
+				else:
+					lx.eval('!!scene.open "{}" import'.format(filepath))
+
+				i += 1
 			else:
 				pass
 		else:
