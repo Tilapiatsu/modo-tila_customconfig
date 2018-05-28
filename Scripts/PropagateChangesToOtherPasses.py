@@ -20,9 +20,6 @@ for o in selection:
 		continue
 	else:
 		obj = o
-		
-
-print rpg, passe, obj
 	
 for p in rpg.items:
 	
