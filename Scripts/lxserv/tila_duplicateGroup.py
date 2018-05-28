@@ -88,7 +88,10 @@ class CmdMyCustomCommand(lxu.command.BasicCommand):
 			compatible_selection = self.get_compatible_type(self.scn.selected)
 
 			if not len(compatible_selection):  # Is any RenderPassGroup selected
-				modo.dialogs.alert('No compatible item selected', 'please select at least one RenderPassGroup item')
+				message = 'please select at least one item of type :'
+				for c in compatible_type.itervalues():
+					message += '\n{}'.format(c)
+				modo.dialogs.alert('No compatible item selected', message)
 				sys.exit()
 
 			else:
@@ -134,8 +137,15 @@ class CmdMyCustomCommand(lxu.command.BasicCommand):
 			new_rpg.addChannel(channel)
 			channel_arr.append(channel)
 
+		print rpg.type
+
 		# Loop over all passes
-		for p in rpg.passes:
+		for p in rpg.items:
+			if p.type == 'actionclip':
+				pass
+			else:
+				new_rpg.addItems(p)
+				continue
 
 			# Create a new passe for each passe present in the source RenderPassGroup
 			new_passe = new_rpg.addPass(p.name)
