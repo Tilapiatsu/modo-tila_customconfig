@@ -15,7 +15,11 @@ except:
 	sys.exit()
 else:
 	root = lx.eval1('dialog.result ?')
-	i=0
+	obj_settings = lx.eval('user.value sceneio.obj.import.units ?')
+	obj_static = lx.eval('user.value sceneio.obj.import.static ?')
+	lx.eval('user.value sceneio.obj.import.units centimeters')
+	lx.eval('user.value sceneio.obj.import.static false')
+
 	for dirname, dirnames, filenames in os.walk(root):
 		
 		for f in filenames:
@@ -23,13 +27,12 @@ else:
 			ext = os.path.splitext(filepath)[1]
 			if ext.lower() == '.obj':
 				lx.out('importing {}'.format(f))
-				if i==0:
-					lx.eval('scene.open "{}" import'.format(filepath))
-				else:
-					lx.eval('!!scene.open "{}" import'.format(filepath))
+				lx.eval('!!scene.open "{}" import'.format(filepath))
 
-				i += 1
 			else:
 				pass
 		else:
 			lx.out('No file of type "obj" found')
+
+	lx.eval('user.value sceneio.obj.import.units {}'.format(obj_settings))
+	lx.eval('user.value sceneio.obj.import.static {}'.format(obj_static))
