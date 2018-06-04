@@ -1,14 +1,14 @@
 
 ################################################################################
 #
-# tila_flattenNormals.py
+# tila_averageNormals.py
 #
 # Version: 1.0
 #
 # Author: Tilapiatsu
 #
-# Description: This script will flatten normals based on the average of all face normals of the selected polygons
-# Todo: - make it compatible with edge and vertex selection
+# Description: This script will average normals based on the face normals of the polygon surrounding each vertices contained in the selected polygons
+# Todo: - make it compatible with edge and vertex selection : It may change the behaviour : normal could be split ?
 #		- create an area weighting feature
 #
 # Last Update: 22/05/2018
@@ -27,6 +27,7 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 		self.scn = modo.Scene()
 		self.useVertexNormals = False
 
+	@staticmethod
 	def init_message(type='info', title='info', message='info'):
 		return_result = type == 'okCancel' \
 						or type == 'yesNo' \
@@ -87,20 +88,18 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 					connectedVertices = ()
 
 					for p in selectedPolygons:
-						print p
 						for v in p.vertices:
 							connectedVertices = connectedVertices + (v,)
 					for v in connectedVertices:
-						print v
 						i = 0
 						averageNormal = (0,0,0)
 						for p in v.polygons:
-							self.addVector(averageNormal, p.normal)
-							i += 1
+							if p in selectedPolygons:
+								averageNormal = self.addVector(averageNormal, p.normal)
+								i += 1
 						i = float(i)
 
 						averageNormal = self.scalarMultiplyVector(averageNormal , 1/i)
-
 						normalMap.setNormal(averageNormal, v)
 								
 
