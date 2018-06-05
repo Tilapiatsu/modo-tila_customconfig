@@ -21,6 +21,11 @@ import lxu.command
 import modo
 
 class CmdFlattenNormals(lxu.command.BasicCommand):
+	ModoModes = {'VERT' : 'vertex',
+				'EDGE' : 'edge',
+				'POLY' : 'polygon',
+				'ITEM' : 'item'}
+
 	def __init__(self):
 		lxu.command.BasicCommand.__init__(self)
 
@@ -75,47 +80,98 @@ class CmdFlattenNormals(lxu.command.BasicCommand):
 	def cmd_Interact(self):
 		pass
 
+	def getModoMode(self):
+		if lx.eval('select.typeFrom ' + self.ModoModes['VERT'] + ';' + self.ModoModes['EDGE'] + ';' + self.ModoModes['POLY'] + ';' + self.ModoModes['ITEM'] + ' ?'): modoMode = self.ModoModes['VERT']
+		if lx.eval('select.typeFrom ' + self.ModoModes['EDGE'] + ';' + self.ModoModes['POLY'] + ';' + self.ModoModes['ITEM'] + ';' + self.ModoModes['VERT'] + ' ?'): modoMode = self.ModoModes['EDGE']
+		if lx.eval('select.typeFrom ' + self.ModoModes['POLY'] + ';' + self.ModoModes['ITEM'] + ';' + self.ModoModes['VERT'] + ';' + self.ModoModes['EDGE'] + ' ?'): modoMode = self.ModoModes['POLY']
+		if lx.eval('select.typeFrom ' + self.ModoModes['ITEM'] + ';' + self.ModoModes['VERT'] + ';' + self.ModoModes['EDGE'] + ';' + self.ModoModes['POLY'] + ' ?'): modoMode = self.ModoModes['ITEM']
+
+		return modoMode
+
 	def basic_Execute(self, msg, flags):
 		if self.dyna_IsSet(0):
 			self.useVertexNormals = self.dyna_Bool(0)
 		if len(self.scn.selected):
 			selection = self.scn.selectedByType('mesh')[0]
 			if selection.type == 'mesh':
-
-				selectedPolygons = selection.geometry.polygons.selected
-
-				if len(selectedPolygons)>0:
-					averageNormal = (0,0,0)
-					i = 0
-					for p in selectedPolygons:
-						print p
-						if not self.useVertexNormals:
-							averageNormal = self.addVector(averageNormal, p.normal)
-							i += 1
-						else:
-							for vID in xrange(p.numVertices):
-								vN = p.vertexNormal(vID)
-								averageNormal = self.addVector(averageNormal, vN)
-								i += 1
-
-					i = float(i)
-
-					averageNormal = self.scalarMultiplyVector(averageNormal , 1/i)
-					vMaps = selection.geometry.vmaps
-
-					for map in vMaps:
-						if map.map_type == 1313821261:
-							normalMap = map
-							break
-					else:
-						normalMap = selection.geometry.vmaps.addVertexNormalMap()
-
-					for p in selectedPolygons:
-						for v in p.vertices:
-							normalMap.setNormal(averageNormal, v)
-					selection.geometry.setMeshEdits(lx.symbol.f_MESHEDIT_MAP_OTHER)
+				# Create vertex normal map if non found
+				vMaps = selection.geometry.vmaps
+				for map in vMaps:
+					if map.map_type == 1313821261:
+						normalMap = map
+						break
 				else:
-					self.init_message('error', 'Select at least one polygon', 'Select at least one polygon')
+					normalMap = selection.geometry.vmaps.addVertexNormalMap()
+
+				# Polygon component Mode
+				if self.getModoMode() == self.ModoModes['POLY']:
+					selectedPolygons = selection.geometry.polygons.selected
+
+					if len(selectedPolygons)>0:
+						averageNormal = (0,0,0)
+						i = 0
+						for p in selectedPolygons:
+							print p
+							if not self.useVertexNormals:
+								averageNormal = self.addVector(averageNormal, p.normal)
+								i += 1
+							else:
+								for vID in xrange(p.numVertices):
+									vN = p.vertexNormal(vID)
+									averageNormal = self.addVector(averageNormal, vN)
+									i += 1
+
+						i = float(i)
+
+						averageNormal = self.scalarMultiplyVector(averageNormal , 1/i)
+						
+
+						for p in selectedPolygons:
+							for v in p.vertices:
+								normalMap.setNormal(averageNormal, v)
+						selection.geometry.setMeshEdits(lx.symbol.f_MESHEDIT_MAP_OTHER)
+					else:
+						self.init_message('error', 'Select at least one polygon', 'Select at least one polygon')
+
+				# Edge component Mode
+				elif self.getModoMode() == self.ModoModes['EDGE']:
+					pass
+					# selectedEdges = selection.geometry.edges.selected
+
+					# if len(selectedEdges)>0:
+					# 	averageNormal = (0,0,0)
+					# 	i = 0
+					# 	for e in selectedEdges:
+					# 		print e
+					# 		for p in e.polygons:
+					# 			if not self.useVertexNormals:
+					# 				averageNormal = self.addVector(averageNormal, p.normal)
+					# 				i += 1
+					# 			else:
+					# 				for vID in xrange(p.numVertices):
+					# 					vN = p.vertexNormal(vID)
+					# 					averageNormal = self.addVector(averageNormal, vN)
+					# 					i += 1
+
+					# 	i = float(i)
+
+					# 	averageNormal = self.scalarMultiplyVector(averageNormal , 1/i)
+					# 	vMaps = selection.geometry.vmaps
+
+					# 	for e in selectedEdges:
+					# 		for v in e.vertices:
+					# 			normalMap.setNormal(averageNormal, v)
+					# 	selection.geometry.setMeshEdits(lx.symbol.f_MESHEDIT_MAP_OTHER)
+					# else:
+					# 	self.init_message('error', 'Select at least one edge', 'Select at least one edge')
+
+				# Vert component Mode
+				elif self.getModoMode() == self.ModoModes['VERT']:
+					pass
+
+				# Item Mode
+				else:
+					self.init_message('error', 'Component mode Needed', 'Need to be in component mode')
 			else:
 				self.init_message('error', 'Select a mesh first', 'Select a mesh first.\nSelected type : {}'.format(selection.type))
 		else:
