@@ -19,6 +19,7 @@ import lx
 import lxifc
 import lxu.command
 import modo
+import sys
 
 class CmdFlattenNormals(lxu.command.BasicCommand):
 	ModoModes = {'VERT' : 'vertex',
@@ -124,50 +125,74 @@ class CmdFlattenNormals(lxu.command.BasicCommand):
 						i = float(i)
 
 						averageNormal = self.scalarMultiplyVector(averageNormal , 1/i)
-						
 
 						for p in selectedPolygons:
 							for v in p.vertices:
 								normalMap.setNormal(averageNormal, v)
+
 						selection.geometry.setMeshEdits(lx.symbol.f_MESHEDIT_MAP_OTHER)
-					else:
-						self.init_message('error', 'Select at least one polygon', 'Select at least one polygon')
 
 				# Edge component Mode
 				elif self.getModoMode() == self.ModoModes['EDGE']:
-					pass
-					# selectedEdges = selection.geometry.edges.selected
+					lx.eval('select.convert vertex')
+					lx.eval('tool.doApply')
+					
+					selectedVertices = selection.geometry.vertices.selected
 
-					# if len(selectedEdges)>0:
-					# 	averageNormal = (0,0,0)
-					# 	i = 0
-					# 	for e in selectedEdges:
-					# 		print e
-					# 		for p in e.polygons:
-					# 			if not self.useVertexNormals:
-					# 				averageNormal = self.addVector(averageNormal, p.normal)
-					# 				i += 1
-					# 			else:
-					# 				for vID in xrange(p.numVertices):
-					# 					vN = p.vertexNormal(vID)
-					# 					averageNormal = self.addVector(averageNormal, vN)
-					# 					i += 1
+					if len(selectedVertices)>0:
+						averageNormal = (0,0,0)
+						i = 0
+						for v in selectedVertices:
+							print v
+							for p in v.polygons:
+								if not self.useVertexNormals:
+									averageNormal = self.addVector(averageNormal, p.normal)
+									i += 1
+								else:
+									for vID in xrange(p.numVertices):
+										vN = p.vertexNormal(vID)
+										averageNormal = self.addVector(averageNormal, vN)
+										i += 1
 
-					# 	i = float(i)
+						i = float(i)
 
-					# 	averageNormal = self.scalarMultiplyVector(averageNormal , 1/i)
-					# 	vMaps = selection.geometry.vmaps
+						averageNormal = self.scalarMultiplyVector(averageNormal , 1/i)
+						vMaps = selection.geometry.vmaps
 
-					# 	for e in selectedEdges:
-					# 		for v in e.vertices:
-					# 			normalMap.setNormal(averageNormal, v)
-					# 	selection.geometry.setMeshEdits(lx.symbol.f_MESHEDIT_MAP_OTHER)
-					# else:
-					# 	self.init_message('error', 'Select at least one edge', 'Select at least one edge')
+						for v in selectedVertices:
+							normalMap.setNormal(averageNormal, v)
+						selection.geometry.setMeshEdits(lx.symbol.f_MESHEDIT_MAP_OTHER)
+
+					lx.eval('select.typeFrom edge;vertex;polygon;item;pivot;center;ptag true')
 
 				# Vert component Mode
 				elif self.getModoMode() == self.ModoModes['VERT']:
-					pass
+
+					selectedVertices = selection.geometry.vertices.selected
+
+					if len(selectedVertices)>0:
+						averageNormal = (0,0,0)
+						i = 0
+						for v in selectedVertices:
+							print v
+							for p in v.polygons:
+								if not self.useVertexNormals:
+									averageNormal = self.addVector(averageNormal, p.normal)
+									i += 1
+								else:
+									for vID in xrange(p.numVertices):
+										vN = p.vertexNormal(vID)
+										averageNormal = self.addVector(averageNormal, vN)
+										i += 1
+
+						i = float(i)
+
+						averageNormal = self.scalarMultiplyVector(averageNormal , 1/i)
+						vMaps = selection.geometry.vmaps
+
+						for v in selectedVertices:
+							normalMap.setNormal(averageNormal, v)
+						selection.geometry.setMeshEdits(lx.symbol.f_MESHEDIT_MAP_OTHER)
 
 				# Item Mode
 				else:
