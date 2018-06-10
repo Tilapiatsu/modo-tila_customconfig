@@ -106,14 +106,15 @@ class CmdFlattenNormals(lxu.command.BasicCommand):
 
 	def basic_Execute(self, msg, flags):
 		try:
-			
 			if self.dyna_IsSet(0):
 				self.useVertexNormals = self.dyna_Bool(0)
-			if len(self.scn.selected):
+
+			meshSelection = self.scn.selectedByType('mesh')
+			if len(meshSelection):
 				sel_svc = lx.service.Selection ()
 
 				n = 0
-				for item in self.scn.selected:
+				for item in meshSelection:
 					if item.type == 'mesh':
 						# Create vertex normal map if non found
 						vMaps = item.geometry.vmaps
@@ -138,6 +139,7 @@ class CmdFlattenNormals(lxu.command.BasicCommand):
 								averageNormal = (0,0,0)
 								i = 0
 								for p in selectedPolygons:
+									print p
 									if not self.useVertexNormals:
 										averageNormal = self.vectorAdd(averageNormal, p.normal)
 										i += 1
