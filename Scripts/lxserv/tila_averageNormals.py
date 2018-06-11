@@ -34,8 +34,12 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 		self.dyna_Add('basedOnSelectedPolygon', lx.symbol.sTYPE_BOOLEAN)
 		self.basic_SetFlags (0, lx.symbol.fCMDARG_OPTIONAL)
 
+		self.dyna_Add('areaWeighting', lx.symbol.sTYPE_BOOLEAN)
+		self.basic_SetFlags (1, lx.symbol.fCMDARG_OPTIONAL)
+
 		self.scn = modo.Scene()
 		self.basedOnSelectedPolygon = False
+		self.areaWeighting = True
 
 	@staticmethod
 	def init_message(type='info', title='info', message='info'):
@@ -102,6 +106,8 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 		try:
 			if self.dyna_IsSet(0):
 				self.basedOnSelectedPolygon = self.dyna_Bool(0)
+			if self.dyna_IsSet(1):
+				self.areaWeighting = self.dyna_Bool(1)
 			meshSelection = self.scn.selectedByType('mesh')
 			if len(meshSelection):
 				sel_svc = lx.service.Selection ()
@@ -118,11 +124,6 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 						else:
 							normalMap = item.geometry.vmaps.addVertexNormalMap()
 							item.geometry.setMeshEdits(lx.symbol.f_MESHEDIT_MAP_OTHER)
-
-						layer_svc = lx.service.Layer()
-						layer_scan = lx.object.LayerScan(layer_svc.ScanAllocate (lx.symbol.f_LAYERSCAN_ACTIVE|lx.symbol.f_LAYERSCAN_MARKALL))
-						if not layer_scan.test():
-							return
 
 						# Polygon component Mode
 						if self.getSelectionMode() == self.ModoModes['POLY']:
@@ -142,11 +143,17 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 										if p not in proceededPolygons:
 											if self.basedOnSelectedPolygon:
 												if p in selectedPolygons:
-													averageNormal = self.vectorAdd(averageNormal, p.normal)
+													normal = p.normal
+													if self.areaWeighting:
+														normal = self.vectorScalarMultiply(normal, p.area)
+													averageNormal = self.vectorAdd(averageNormal, normal)
 													proceededPolygons = proceededPolygons + (p,)
 													i += 1
 											else:
-												averageNormal = self.vectorAdd(averageNormal, p.normal)
+												normal = p.normal
+												if self.areaWeighting:
+													normal = self.vectorScalarMultiply(normal, p.area)
+												averageNormal = self.vectorAdd(averageNormal, normal)
 												proceededPolygons = proceededPolygons + (p,)
 												i += 1
 
@@ -159,6 +166,12 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 
 						# Edge component Mode
 						elif self.getSelectionMode() == self.ModoModes['EDGE']:
+
+							layer_svc = lx.service.Layer()
+							layer_scan = lx.object.LayerScan(layer_svc.ScanAllocate (lx.symbol.f_LAYERSCAN_ACTIVE|lx.symbol.f_LAYERSCAN_MARKALL))
+							if not layer_scan.test():
+								return
+
 							edge_pkt_trans = lx.object.EdgePacketTranslation (sel_svc.Allocate (lx.symbol.sSELTYP_EDGE))
 							sel_type_edge = sel_svc.LookupType (lx.symbol.sSELTYP_EDGE)
 
@@ -217,8 +230,6 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 									averageNormal = self.vectorAdd(averageNormal, polygon_loc.Normal())
 									i += 1
 								i = float(i)
-								print i
-								print averageNormal
 								averageNormal = self.vectorScalarMultiply(averageNormal , 1/i)
 								vMaps = item.geometry.vmaps
 
@@ -239,7 +250,10 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 									proceededPolygons = ()
 									for p in v.polygons:
 										if p not in proceededPolygons:
-											averageNormal = self.vectorAdd(averageNormal, p.normal)
+											normal = p.normal
+											if self.areaWeighting:
+												normal = self.vectorScalarMultiply(normal, p.area)
+											averageNormal = self.vectorAdd(averageNormal, normal)
 											proceededPolygons = proceededPolygons + (p,)
 											i += 1
 									i = float(i)

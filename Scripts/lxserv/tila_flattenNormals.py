@@ -126,10 +126,6 @@ class CmdFlattenNormals(lxu.command.BasicCommand):
 							normalMap = item.geometry.vmaps.addVertexNormalMap()
 							item.geometry.setMeshEdits(lx.symbol.f_MESHEDIT_MAP_OTHER)
 
-						layer_svc = lx.service.Layer()
-						layer_scan = lx.object.LayerScan(layer_svc.ScanAllocate (lx.symbol.f_LAYERSCAN_ACTIVE|lx.symbol.f_LAYERSCAN_MARKALL))
-						if not layer_scan.test():
-							return
 
 						# Polygon component Mode
 						if self.currentSelectionMode == self.ModoModes['POLY']:
@@ -164,6 +160,12 @@ class CmdFlattenNormals(lxu.command.BasicCommand):
 						elif self.currentSelectionMode == self.ModoModes['EDGE']:
 							# lx.eval('select.convert vertex')
 							# lx.eval('tool.doApply')
+
+							layer_svc = lx.service.Layer()
+							layer_scan = lx.object.LayerScan(layer_svc.ScanAllocate (lx.symbol.f_LAYERSCAN_ACTIVE|lx.symbol.f_LAYERSCAN_MARKALL))
+							if not layer_scan.test():
+								return
+
 
 							edge_pkt_trans = lx.object.EdgePacketTranslation (sel_svc.Allocate (lx.symbol.sSELTYP_EDGE))
 							sel_type_edge = sel_svc.LookupType (lx.symbol.sSELTYP_EDGE)
@@ -238,6 +240,8 @@ class CmdFlattenNormals(lxu.command.BasicCommand):
 									vert = item.geometry.vertices[v]
 									normalMap.setNormal(averageNormal, vert)
 							item.geometry.setMeshEdits(lx.symbol.f_MESHEDIT_MAP_OTHER)
+
+							layer_scan.Apply()
 
 						# Vert component Mode
 						elif self.currentSelectionMode == self.ModoModes['VERT']:
