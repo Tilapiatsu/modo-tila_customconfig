@@ -1,4 +1,4 @@
-﻿#python
+#python
 #RenderOutputManager 
 #Daniel Potuznik
 #www.onestepmda.com
@@ -6,6 +6,15 @@
 
 #Description
 """
+
+#  http://community.foundry.com/discuss/topic/119871
+
+import modo
+passes = modo.Scene().items('actionclip')
+for p in passes:
+    print p.name
+    print p.active
+
 #Render Pass Manager for modo 601 You can create very easily pass rendering 
 1.) Choice your base path image file:  
     X: \ myproject \ frame \ plan_1 \ plan_1 
@@ -304,6 +313,7 @@ def updateRenderOutput(listAllRO,existingRO,createFolder):
                                     nameFile = nameFile.replace("[LAYERNAME]",RENDERNAME)
                                     nameFile = nameFile.replace("[BASENAME]",BASENAME)
                                     nameFile = nameFile.replace("[SUFFIXE]",TYPENAME)
+                                    #nameFile = nameFile.replace("[PASSNAME]",PASSNAME)
                                     nameFile = nameFile.replace("|",separator)
                                     nameFile = baseFolder + nameFile
                                     nameFile = nameFile.replace(separator+separator+separator,separator)
@@ -446,6 +456,7 @@ def updateRenderOutput(listAllRO,existingRO,createFolder):
                         nameFile = nameFile.replace("[LAYERNAME]",RENDERNAME)
                         nameFile = nameFile.replace("[BASENAME]",BASENAME)
                         nameFile = nameFile.replace("[SUFFIXE]",TYPENAME)
+                        #nameFile = nameFile.replace("[PASSNAME]",PASSNAME)
                         nameFile = nameFile.replace("|",separator)
                         nameFile = baseFolder + nameFile
                         nameFile = nameFile.replace(separator+separator+separator,separator)
@@ -552,6 +563,7 @@ def updateCameraName(listAllRO,existingRO,createFolder):
                         nameFile = nameFile.replace("[LAYERNAME]",RENDERNAME)
                         nameFile = nameFile.replace("[BASENAME]",BASENAME)
                         nameFile = nameFile.replace("[SUFFIXE]",TYPENAME)
+                        #nameFile = nameFile.replace("[PASSNAME]",PASSNAME)
                         nameFile = nameFile.replace("|",separator)
                         nameFile = baseFolder + nameFile
                         nameFile = nameFile.replace(separator+separator+separator,separator)

@@ -102,6 +102,11 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 	def getSelectionMode(self):
 		return lx.eval1 ('query layerservice selmode ?')
 
+	
+	def computeAreaWeighting(self, normal, polygon):
+		if self.areaWeighting:
+			normal = self.vectorScalarMultiply(normal, polygon.area)
+
 	def basic_Execute(self, msg, flags):
 		try:
 			if self.dyna_IsSet(0):
@@ -138,21 +143,19 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 								for v in connectedVertices:
 									i = 0
 									averageNormal = (0,0,0)
+									proceededPolygons = ()
 									for p in v.polygons:
-										proceededPolygons = ()
 										if p not in proceededPolygons:
 											if self.basedOnSelectedPolygon:
 												if p in selectedPolygons:
 													normal = p.normal
-													if self.areaWeighting:
-														normal = self.vectorScalarMultiply(normal, p.area)
+													self.computeAreaWeighting(normal, p)
 													averageNormal = self.vectorAdd(averageNormal, normal)
 													proceededPolygons = proceededPolygons + (p,)
 													i += 1
 											else:
 												normal = p.normal
-												if self.areaWeighting:
-													normal = self.vectorScalarMultiply(normal, p.area)
+												self.computeAreaWeighting(normal, p)
 												averageNormal = self.vectorAdd(averageNormal, normal)
 												proceededPolygons = proceededPolygons + (p,)
 												i += 1
