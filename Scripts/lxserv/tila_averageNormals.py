@@ -8,10 +8,11 @@
 # Author: Tilapiatsu
 #
 # Description: This script will average normals based on the face normals of the polygon surrounding each vertices contained in the selected polygons
-# Todo: - make it compatible with edge and vertex selection : It may change the behaviour : normal could be split ?
-#		- create an area weighting feature
+# Todo: - It may change the behaviour : normal could be split ?
+# 		- Make it compatible with built-in harden and soften normal
+#		- It is not compatible to with locked item
 #
-# Last Update: 22/05/2018
+# Last Update: 17/06/2018
 #
 ################################################################################
 
@@ -40,6 +41,19 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 		self.scn = modo.Scene()
 		self.basedOnSelectedPolygon = False
 		self.areaWeighting = True
+
+	def arg_UIHints(self, index, hints):
+		if index == 0:
+			hints.Label('Based On Selected Polygon')
+		if index == 1:
+			hints.Label('Area Weighting')
+
+
+	def cmd_UserName(self):
+ 		return 'Average Normals'
+
+	def cmd_Desc(self):
+ 		return 'This command will average vertex normal based on the face normals of the polygon surrounding each vertices contained in the selected polygons.'
 
 	@staticmethod
 	def init_message(type='info', title='info', message='info'):
@@ -134,38 +148,40 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 						if self.getSelectionMode() == self.ModoModes['POLY']:
 							selectedPolygons = item.geometry.polygons.selected
 
-							if len(selectedPolygons)>0:
-								connectedVertices = ()
+							if len(selectedPolygons)==0:
+								selectedPolygons = item.geometry.polygons
 
-								for p in selectedPolygons:
-									for v in p.vertices:
-										connectedVertices = connectedVertices + (v,)
-								for v in connectedVertices:
-									i = 0
-									averageNormal = (0,0,0)
-									proceededPolygons = ()
-									for p in v.polygons:
-										if p not in proceededPolygons:
-											if self.basedOnSelectedPolygon:
-												if p in selectedPolygons:
-													normal = p.normal
-													self.computeAreaWeighting(normal, p)
-													averageNormal = self.vectorAdd(averageNormal, normal)
-													proceededPolygons = proceededPolygons + (p,)
-													i += 1
-											else:
+							connectedVertices = ()
+
+							for p in selectedPolygons:
+								for v in p.vertices:
+									connectedVertices = connectedVertices + (v,)
+							for v in connectedVertices:
+								i = 0
+								averageNormal = (0,0,0)
+								proceededPolygons = ()
+								for p in v.polygons:
+									if p not in proceededPolygons:
+										if self.basedOnSelectedPolygon:
+											if p in selectedPolygons:
 												normal = p.normal
 												self.computeAreaWeighting(normal, p)
 												averageNormal = self.vectorAdd(averageNormal, normal)
 												proceededPolygons = proceededPolygons + (p,)
 												i += 1
+										else:
+											normal = p.normal
+											self.computeAreaWeighting(normal, p)
+											averageNormal = self.vectorAdd(averageNormal, normal)
+											proceededPolygons = proceededPolygons + (p,)
+											i += 1
 
-									i = float(i)
+								i = float(i)
 
-									averageNormal = self.vectorScalarMultiply(averageNormal , 1/i)
-									normalMap.setNormal(averageNormal, v)
+								averageNormal = self.vectorScalarMultiply(averageNormal , 1/i)
+								normalMap.setNormal(averageNormal, v)
 
-								item.geometry.setMeshEdits(lx.symbol.f_MESHEDIT_MAP_OTHER)
+							item.geometry.setMeshEdits(lx.symbol.f_MESHEDIT_MAP_OTHER)
 
 						# Edge component Mode
 						elif self.getSelectionMode() == self.ModoModes['EDGE']:
@@ -179,6 +195,7 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 							sel_type_edge = sel_svc.LookupType (lx.symbol.sSELTYP_EDGE)
 
 							selectedEdgeCount = sel_svc.Count(sel_type_edge)
+
 
 							mesh_loc = lx.object.Mesh(layer_scan.MeshBase(n))
 							if not mesh_loc.test():
@@ -197,9 +214,7 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 								continue
 
 							if selectedEdgeCount == 0:
-								# Return if there are no edges selected.
-								self.init_message('error', 'No edge selected', 'select at least one edge')
-								return
+								continue
 
 							selectedEdges = []
 							for i in xrange(selectedEdgeCount):
@@ -242,29 +257,33 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 
 							item.geometry.setMeshEdits(lx.symbol.f_MESHEDIT_MAP_OTHER)
 
+							n += 1
+
 						# Vert component Mode
 						elif self.getSelectionMode() == self.ModoModes['VERT']:
 							selectedVertices = item.geometry.vertices.selected
 
-							if len(selectedVertices)>0:
-								averageNormal = (0,0,0)
-								i = 0
-								for v in selectedVertices:
-									proceededPolygons = ()
-									for p in v.polygons:
-										if p not in proceededPolygons:
-											normal = p.normal
-											if self.areaWeighting:
-												normal = self.vectorScalarMultiply(normal, p.area)
-											averageNormal = self.vectorAdd(averageNormal, normal)
-											proceededPolygons = proceededPolygons + (p,)
-											i += 1
-									i = float(i)
+							if len(selectedVertices) == 0:
+								selectedVertices = item.geometry.vertices
+							
+							averageNormal = (0,0,0)
+							i = 0
+							for v in selectedVertices:
+								proceededPolygons = ()
+								for p in v.polygons:
+									if p not in proceededPolygons:
+										normal = p.normal
+										if self.areaWeighting:
+											normal = self.vectorScalarMultiply(normal, p.area)
+										averageNormal = self.vectorAdd(averageNormal, normal)
+										proceededPolygons = proceededPolygons + (p,)
+										i += 1
+								i = float(i)
 
-									averageNormal = self.vectorScalarMultiply(averageNormal , 1/i)
-									normalMap.setNormal(averageNormal, v)
+								averageNormal = self.vectorScalarMultiply(averageNormal , 1/i)
+								normalMap.setNormal(averageNormal, v)
 
-								item.geometry.setMeshEdits(lx.symbol.f_MESHEDIT_MAP_OTHER)
+							item.geometry.setMeshEdits(lx.symbol.f_MESHEDIT_MAP_OTHER)
 
 						# Item Mode
 						else:

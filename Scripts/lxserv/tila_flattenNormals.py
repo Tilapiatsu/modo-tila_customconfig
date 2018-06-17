@@ -7,11 +7,11 @@
 #
 # Author: Tilapiatsu
 #
-# Description: This script will flatten normals based on the average of all face normals of the selected polygons
-# Todo: - make it compatible with edge and vertex selection : It may change the behaviour : normal could be split ?
-#		- create an area weighting feature
+# Description: This script will flatten normals based on the average of all face normals of the selected components
+# Todo: - normal could be split ?
+#		- It is not compatible to with locked item
 #
-# Last Update: 22/05/2018
+# Last Update: 17/06/2018
 #
 ################################################################################
 
@@ -42,6 +42,12 @@ class CmdFlattenNormals(lxu.command.BasicCommand):
 	def arg_UIHints (self, index, hints):
 		if index == 0:
 			hints.Label('Use Vertex Normal')
+	
+	def cmd_UserName (self):
+ 		return 'Flatten Normals'
+
+	def cmd_Desc (self):
+ 		return 'This command will flatten vertex normal based on the average of all face normals of the selected components.'
 
 	@staticmethod
 	def init_message(type='info', title='info', message='info'):
