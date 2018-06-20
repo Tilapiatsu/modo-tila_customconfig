@@ -17,6 +17,7 @@ import lx, modo
 import lxifc
 import lxu.command
 import sys
+import traceback
 
 
 class CmdPasteChannelsInSelectedRenderPass(lxu.command.BasicCommand):
@@ -26,7 +27,7 @@ class CmdPasteChannelsInSelectedRenderPass(lxu.command.BasicCommand):
 		self.scn = modo.Scene()
 		self.renderpass_groups = self.get_renderpass_groups()
 		self.current_renderpass_group = self.get_current_renderpass_group()
-		self.initial_active_pass = self.get_current_renderpass()
+		self.initial_active_pass = None
 		self.passes = []
 		self.object = None
 
@@ -71,14 +72,17 @@ class CmdPasteChannelsInSelectedRenderPass(lxu.command.BasicCommand):
 				return None
 
 	def get_current_renderpass(self):
-		if self.current_renderpass_group is None:
-			return None
-		else:
-			for p in self.current_renderpass_group.passes:
-				if p.active:
-					return p
-			else:
+		try:
+			if self.current_renderpass_group is None:
 				return None
+			else:
+				for p in self.current_renderpass_group.passes:
+					if p.active:
+						return p
+				else:
+					return None
+		except:
+			lx.out(traceback.format_exc())
 
 
 
@@ -93,6 +97,8 @@ class CmdPasteChannelsInSelectedRenderPass(lxu.command.BasicCommand):
 
 	def basic_Execute(self, msg, flags):
 		selection = self.scn.selected
+
+		self.initial_active_pass = self.get_current_renderpass()
 
 		if len(selection) < 3:
 			self.init_message("error", 'Invalid Selection Count', 'Select at least one item, and one render pass item')
