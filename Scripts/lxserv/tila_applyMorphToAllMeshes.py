@@ -92,8 +92,7 @@ class CmdApplyMorphToAllMeshes(lxu.command.BasicCommand):
 			if morphMapName is not None:
 				return morphMapName
 		except:
-			self.init_message("error", "No morphmMap selected",
-							  "Please slelect one morph map first")
+			self.init_message("error", "No morphmMap selected", "Please slelect one morph map first")
 			return None
 
 	def applyMorphMap(self, CurrentMorphMapName):
@@ -143,8 +142,6 @@ class CmdApplyMorphToAllMeshes(lxu.command.BasicCommand):
 			self.initialSelection = [self.scn.selectedByType('mesh')[0]]
 
 			currentMorphMapName = self.getSelectedMorphMap()
-
-			print currentMorphMapName
 
 			if currentMorphMapName is None:
 				self.printLog('No morphMap selected')
