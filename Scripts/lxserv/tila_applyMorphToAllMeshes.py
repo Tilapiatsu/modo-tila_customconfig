@@ -105,7 +105,6 @@ class CmdApplyMorphToAllMeshes(lxu.command.BasicCommand):
 			morphMaps = vmaps.morphMaps
 
 			morphMapNames = [m.name for m in morphMaps]
-			print self.morphMapName, CurrentMorphMapName
 			if CurrentMorphMapName not in morphMapNames or self.morphMapName not in morphMapNames:
 				self.printLog('morphMap {} not in {} item'.format(CurrentMorphMapName, item.name))
 				continue
