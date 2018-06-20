@@ -28,7 +28,7 @@ class CmdSwitchMeshesToSelectedMorph(lxu.command.BasicCommand):
 		self.dyna_Add('selectedItemOnly', lx.symbol.sTYPE_BOOLEAN)
 		self.basic_SetFlags(0, lx.symbol.fCMDARG_OPTIONAL)
 
-		self.scn = modo.Scene()
+		self.scn = None
 		self.selectedItemOnly = False
 		self.initialSelection = None
 		self.debug = False
