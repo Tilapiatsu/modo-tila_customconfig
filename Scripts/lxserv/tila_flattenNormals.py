@@ -35,7 +35,7 @@ class CmdFlattenNormals(lxu.command.BasicCommand):
 		self.dyna_Add('useVertexNormals', lx.symbol.sTYPE_BOOLEAN)
 		self.basic_SetFlags (0, lx.symbol.fCMDARG_OPTIONAL)
 
-		self.scn = modo.Scene()
+		self.scn = None
 		self.currentSelectionMode = self.getSelectionMode()
 		self.useVertexNormals = False
 
@@ -112,6 +112,8 @@ class CmdFlattenNormals(lxu.command.BasicCommand):
 
 	def basic_Execute(self, msg, flags):
 		try:
+			if self.scn != modo.Scene():
+				self.scn = modo.Scene()
 			if self.dyna_IsSet(0):
 				self.useVertexNormals = self.dyna_Bool(0)
 

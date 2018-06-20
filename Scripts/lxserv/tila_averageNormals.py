@@ -33,12 +33,12 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 		lxu.command.BasicCommand.__init__(self)
 
 		self.dyna_Add('basedOnSelectedPolygon', lx.symbol.sTYPE_BOOLEAN)
-		self.basic_SetFlags (0, lx.symbol.fCMDARG_OPTIONAL)
+		self.basic_SetFlags(0, lx.symbol.fCMDARG_OPTIONAL)
 
 		self.dyna_Add('areaWeighting', lx.symbol.sTYPE_BOOLEAN)
-		self.basic_SetFlags (1, lx.symbol.fCMDARG_OPTIONAL)
+		self.basic_SetFlags(1, lx.symbol.fCMDARG_OPTIONAL)
 
-		self.scn = modo.Scene()
+		self.scn = None
 		self.basedOnSelectedPolygon = False
 		self.areaWeighting = True
 
@@ -123,6 +123,8 @@ class CmdAverageNormals(lxu.command.BasicCommand):
 
 	def basic_Execute(self, msg, flags):
 		try:
+			if self.scn != modo.Scene():
+				self.scn = modo.Scene()
 			if self.dyna_IsSet(0):
 				self.basedOnSelectedPolygon = self.dyna_Bool(0)
 			if self.dyna_IsSet(1):
