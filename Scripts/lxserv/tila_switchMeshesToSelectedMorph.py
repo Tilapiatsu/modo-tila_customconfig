@@ -22,151 +22,156 @@ import sys
 
 
 class CmdSwitchMeshesToSelectedMorph(lxu.command.BasicCommand):
-	def __init__(self):
-		lxu.command.BasicCommand.__init__(self)
+    def __init__(self):
+        lxu.command.BasicCommand.__init__(self)
 
-		self.dyna_Add('selectedItemOnly', lx.symbol.sTYPE_BOOLEAN)
-		self.basic_SetFlags(0, lx.symbol.fCMDARG_OPTIONAL)
+        self.dyna_Add('selectedItemOnly', lx.symbol.sTYPE_BOOLEAN)
+        self.basic_SetFlags(0, lx.symbol.fCMDARG_OPTIONAL)
 
-		self.scn = None
-		self.selectedItemOnly = False
-		self.initialSelection = None
-		self.debug = False
+        self.scn = None
+        self.selectedItemOnly = False
+        self.initialSelection = None
+        self.debug = False
 
-	def arg_UIHints (self, index, hints):
-		if index == 0:
-			hints.Label('selected Mesh Only')
-	
-	def cmd_UserName (self):
- 		return 'Switch Mesh to selected morph map'
+    def arg_UIHints(self, index, hints):
+        if index == 0:
+            hints.Label('selected Mesh Only')
 
-	def cmd_Desc (self):
- 		return 'switch the selected morph map with the "undeformed" version of the mesh'
+    def cmd_UserName(self):
+        return 'Switch Mesh to selected morph map'
 
-	@staticmethod
-	def init_message(type='info', title='info', message='info'):
-		return_result = type == 'okCancel' \
-			or type == 'yesNo' \
-			or type == 'yesNoCancel' \
-			or type == 'yesNoAll' \
-			or type == 'yesNoToAll' \
-			or type == 'saveOK' \
-			or type == 'fileOpen' \
-			or type == 'fileOpenMulti' \
-			or type == 'fileSave' \
-			or type == 'dir'
-		try:
-			lx.eval('dialog.setup {%s}' % type)
-			lx.eval('dialog.title {%s}' % title)
-			lx.eval('dialog.msg {%s}' % message)
-			lx.eval('dialog.open')
+    def cmd_Desc(self):
+        return 'switch the selected morph map with the "undeformed" version of the mesh'
 
-			if return_result:
-				return lx.eval('dialog.result ?')
+    @staticmethod
+    def init_message(type='info', title='info', message='info'):
+        return_result = type == 'okCancel' \
+            or type == 'yesNo' \
+            or type == 'yesNoCancel' \
+            or type == 'yesNoAll' \
+            or type == 'yesNoToAll' \
+            or type == 'saveOK' \
+            or type == 'fileOpen' \
+            or type == 'fileOpenMulti' \
+            or type == 'fileSave' \
+            or type == 'dir'
+        try:
+            lx.eval('dialog.setup {%s}' % type)
+            lx.eval('dialog.title {%s}' % title)
+            lx.eval('dialog.msg {%s}' % message)
+            lx.eval('dialog.open')
 
-		except:
-			if return_result:
-				return lx.eval('dialog.result ?')
+            if return_result:
+                return lx.eval('dialog.result ?')
 
-	def cmd_Flags(self):
-		return lx.symbol.fCMD_MODEL | lx.symbol.fCMD_UNDO
+        except:
+            if return_result:
+                return lx.eval('dialog.result ?')
 
-	def basic_Enable(self, msg):
-		return True
+    def cmd_Flags(self):
+        return lx.symbol.fCMD_MODEL | lx.symbol.fCMD_UNDO
 
-	def cmd_Interact(self):
-		pass
+    def basic_Enable(self, msg):
+        return True
 
-	def printLog(self, message):
-		if self.debug:
-			lx.out('SwitchMshToSelectedMorph : {}'.format(message))
+    def cmd_Interact(self):
+        pass
 
-	def getSelectedMorphMap(self):
-		try:
-			morphMapName = lx.eval('vertMap.name ? morf active')
-			if morphMapName is not None:
-				return morphMapName
-		except:
-			self.init_message("error", "No morphmMap selected",
-							  "Please slelect one morph map first")
-			return None
+    def printLog(self, message):
+        if self.debug:
+            lx.out('SwitchMshToSelectedMorph : {}'.format(message))
 
-	def switchMorphMaps(self, morphMapName):
-		if self.selectedItemOnly:
-			meshSelection = [self.initialSelection[0]]
-		else:
-			meshSelection = self.scn.items('mesh')
-		i = 0
-		for item in meshSelection:
-			item.select(replace=True)
-			vmaps = item.geometry.vmaps
-			morphMaps = vmaps.morphMaps
+    def getSelectedMorphMap(self):
+        try:
+            morphMapName = lx.eval('vertMap.name ? morf active')
+            if morphMapName is not None:
+                return morphMapName
 
-			if morphMapName not in [m.name for m in morphMaps]:
-				self.printLog('morphMap {} not in {} item'.format(morphMapName, item.name))
-				continue
+        except:
+            self.init_message("error", "No morphmMap selected",
+                              "Please slelect one morph map first")
+            return None
 
-			for map in morphMaps:
-				if map.name == morphMapName:
-					# self.printLog('morphMap {} found in {}'.format(morphMapName, item.name))
-					lx.eval('select.vertexMap {} morf replace'.format(morphMapName))
-					lx.eval('select.vertexMap {} morf 3'.format(morphMapName))
-					# self.breakDialog('About to morph')
-					lx.eval('vertMap.applyMorph {} 1.0'.format(morphMapName))
-					# self.breakDialog('About to SelectMorph')
-					lx.eval('select.vertexMap {} morf replace'.format(morphMapName))
-					# self.breakDialog('About to fixMorph')
-					lx.eval('vertMap.applyMorph {} -2.0'.format(morphMapName))
+    def switchMorphMaps(self, morphMapName):
+        if self.selectedItemOnly:
+            meshSelection = [self.initialSelection[0]]
+        else:
+            meshSelection = self.scn.items('mesh')
+        i = 0
+        for item in meshSelection:
+            item.select(replace=True)
+            vmaps = item.geometry.vmaps
+            morphMaps = vmaps.morphMaps
 
-			for map in morphMaps:
-				if map.name != morphMapName:
-					self.printLog('Fixing morphMap {} found in {}'.format(map.name, item.name))
-					try:
-						lx.eval('!select.vertexMap {} morf replace'.format(map.name))
-						lx.eval('!vertMap.applyMorph {} 1.0'.format(morphMapName))
-						lx.eval('!select.vertexMap {} morf 3'.format(map.name))
-					except RuntimeError:
-						self.printLog('Skipping absolute morphMap {} found in {}'.format(map.name, item.name))
-						continue
-						# lx.eval('!select.vertexMap {} spot replace'.format(map.name))
-						# lx.eval('!vertMap.applyMorph {} 1.0'.format(morphMapName))
-						# lx.eval('!select.vertexMap {} spot 3'.format(map.name))
-			i += 1
-		else:
-			self.initialSelection[0].select(replace=True)
-			lx.eval('select.vertexMap {} morf 3'.format(morphMapName))
+            if morphMapName not in [m.name for m in morphMaps]:
+                self.printLog('morphMap {} not in {} item'.format(
+                    morphMapName, item.name))
+                continue
 
-	@staticmethod
-	def breakPoint(i, number):
-		if i == number:
-			sys.exit()
+            for map in morphMaps:
+                if map.name == morphMapName:
+                    # self.printLog('morphMap {} found in {}'.format(morphMapName, item.name))
+                    lx.eval('select.vertexMap {} morf replace'.format(morphMapName))
+                    lx.eval('select.vertexMap {} morf 3'.format(morphMapName))
+                    # self.breakDialog('About to morph')
+                    lx.eval('vertMap.applyMorph {} 1.0'.format(morphMapName))
+                    # self.breakDialog('About to SelectMorph')
+                    lx.eval('select.vertexMap {} morf replace'.format(morphMapName))
+                    # self.breakDialog('About to fixMorph')
+                    lx.eval('vertMap.applyMorph {} -2.0'.format(morphMapName))
 
-	def breakDialog(self, message):
-		if self.debug:
-			self.init_message('info', 'info', message)
+            for map in morphMaps:
+                if map.name != morphMapName:
+                    self.printLog('Fixing morphMap {} found in {}'.format(
+                        map.name, item.name))
+                    try:
+                        lx.eval(
+                            '!select.vertexMap {} morf replace'.format(map.name))
+                        lx.eval('!vertMap.applyMorph {} 1.0'.format(morphMapName))
+                        lx.eval('!select.vertexMap {} morf 3'.format(map.name))
+                    except RuntimeError:
+                        self.printLog('Skipping absolute morphMap {} found in {}'.format(
+                            map.name, item.name))
+                        continue
+                        # lx.eval('!select.vertexMap {} spot replace'.format(map.name))
+                        # lx.eval('!vertMap.applyMorph {} 1.0'.format(morphMapName))
+                        # lx.eval('!select.vertexMap {} spot 3'.format(map.name))
+            i += 1
+        else:
+            self.initialSelection[0].select(replace=True)
+            lx.eval('select.vertexMap {} morf 3'.format(morphMapName))
 
-	def basic_Execute(self, msg, flags):
-		try:
-			if self.scn != modo.Scene():
-				self.scn = modo.Scene()
+    @staticmethod
+    def breakPoint(i, number):
+        if i == number:
+            sys.exit()
 
-			if self.dyna_IsSet(0):
-				self.selectedItemOnly = self.dyna_Bool(0)
+    def breakDialog(self, message):
+        if self.debug:
+            self.init_message('info', 'info', message)
 
-			self.initialSelection = [self.scn.selectedByType('mesh')[0]]
+    def basic_Execute(self, msg, flags):
+        try:
+            if self.scn != modo.Scene():
+                self.scn = modo.Scene()
 
-			morphMapName = self.getSelectedMorphMap()
+            if self.dyna_IsSet(0):
+                self.selectedItemOnly = self.dyna_Bool(0)
 
-			if morphMapName is None:
-				self.printLog('No morphMap found')
-				return
+            self.initialSelection = [self.scn.selectedByType('mesh')[0]]
 
-			self.switchMorphMaps(morphMapName)
-		except:
-			lx.out(traceback.format_exc())
+            morphMapName = self.getSelectedMorphMap()
 
-	def cmd_Query(self, index, vaQuery):
-		lx.notimpl()
+            if morphMapName is None:
+                self.printLog('No morphMap found')
+                return
+
+            self.switchMorphMaps(morphMapName)
+        except:
+            lx.out(traceback.format_exc())
+
+    def cmd_Query(self, index, vaQuery):
+        lx.notimpl()
 
 
 lx.bless(CmdSwitchMeshesToSelectedMorph, "tila.switchMeshesToSelectedMorph")
