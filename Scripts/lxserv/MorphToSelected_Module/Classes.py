@@ -82,9 +82,12 @@ class MorphToSelected():
         topology = Topology(self.source)
 
         selectedEdges = topology.GetSelectedEdges()
-        print selectedEdges
 
-        print topology.GetUniqueFaceIdByEdges(selectedEdges)
+        commonFace = topology.GetUniqueFaceIdByEdges(selectedEdges)
+
+        if commonFace is not None:
+            lx.eval('select.typeFrom polygon;edge;vertex;item;pivot;center;ptag true')
+            commonFace.select()
 
     def getSourceDestination(self, args):
         if args is not None:
@@ -104,49 +107,24 @@ class Topology(MorphToSelected):
         self.Mesh = mesh
 
     def GetSelectedEdges(self):
-        # Edge component Mode
-        sel_svc = lx.service.Selection()
-        layer_svc = lx.service.Layer()
-        layer_scan = lx.object.LayerScan(layer_svc.ScanAllocate(
-            lx.symbol.f_LAYERSCAN_ACTIVE | lx.symbol.f_LAYERSCAN_MARKALL))
-        if not layer_scan.test():
-            return None
+        selSrv = lx.service.Selection()
+        edgeSelTypeCode = selSrv.LookupType(lx.symbol.sSELTYP_EDGE)
+        vTransPacket = lx.object.EdgePacketTranslation(
+            selSrv.Allocate(lx.symbol.sSELTYP_EDGE))
 
-        edge_pkt_trans = lx.object.EdgePacketTranslation(
-            sel_svc.Allocate(lx.symbol.sSELTYP_EDGE))
-        sel_type_edge = sel_svc.LookupType(lx.symbol.sSELTYP_EDGE)
+        numEdges = selSrv.Count(edgeSelTypeCode)
 
-        selectedEdgeCount = sel_svc.Count(sel_type_edge)
+        edges = []
+        for i in range(numEdges):
+            packetPointer = selSrv.ByIndex(edgeSelTypeCode, i)
+            id1, id2 = vTransPacket.Vertices(packetPointer)
+            item_ = vTransPacket.Item(packetPointer)
 
-        mesh_loc = lx.object.Mesh(layer_scan.MeshBase(0))
-        if not mesh_loc.test():
-            return None
+            if item_ == self.Mesh:
+                edges.append(modo.MeshEdge.fromIDs(
+                    id1, id2, self.Mesh.geometry, self.Mesh))
 
-        polygon_loc = lx.object.Polygon(mesh_loc.PolygonAccessor())
-        if not polygon_loc.test():
-            return None
-
-        edge_loc = lx.object.Edge(mesh_loc.EdgeAccessor())
-        if not edge_loc.test():
-            return None
-
-        meshmap_loc = lx.object.MeshMap(mesh_loc.MeshMapAccessor())
-        if not meshmap_loc.test():
-            return None
-
-        if selectedEdgeCount == 0:
-            # Return if there are no edges selected.
-            self.mm.error('select at least one edge')
-            return None
-
-        selectedEdges = []
-        for i in xrange(selectedEdgeCount):
-            # Get a packet representing this edge.
-            pkt = sel_svc.ByIndex(sel_type_edge, i)
-
-            selectedEdges.append(pkt)
-
-        return selectedEdges
+        return tuple(edges)
 
     def GetSelectedVertices(self):
         return self.Mesh.geometry.vertices.selected
