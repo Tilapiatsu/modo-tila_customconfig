@@ -90,11 +90,23 @@ class MorphToSelected():
         #     lx.eval('select.typeFrom polygon;edge;vertex;item;pivot;center;ptag true')
         #     commonFace.select()
 
-        commonVertex = topology.GetUniqueVertexIdByEdge(selectedEdges)
+        # commonVertex = topology.GetUniqueVertexIdByEdge(selectedEdges)
 
-        if commonVertex is not None:
-            lx.eval('select.typeFrom vertex;edge;polygon;item;pivot;center;ptag true')
-            commonVertex.select()
+        # if commonVertex is not None:
+        #     lx.eval('select.typeFrom vertex;edge;polygon;item;pivot;center;ptag true')
+        #     commonVertex.select()
+
+        # otherVertex = topology.GetTheOtherVertexOfAnEdge(topology.GetSelectedEdges()[
+        #     0], topology.GetSelectedVertices()[0])
+
+        # if otherVertex is not None:
+        #     lx.eval('select.typeFrom vertex;edge;polygon;item;pivot;center;ptag true')
+        #     otherVertex.select(replace=True)
+
+        numberEdges = topology.GetTheNumberOfEdgesFromVertex(
+            topology.GetSelectedVertices()[0])
+
+        print numberEdges
 
     def getSourceDestination(self, args):
         if args is not None:
@@ -190,11 +202,50 @@ class Topology(MorphToSelected):
                 self.mm.error(e.id)
             return None
 
-    def GetTheOtherVertexOfAnEdge(self, edgeID, vertID):
-        pass
+    def GetTheOtherVertexOfAnEdge(self, edge, vert):
+        vertlist = edge.vertices
 
-    def GetTheNumberOfEdgesFromVertex(self, vertID):
-        pass
+        for v in vertlist:
+            if v != vert:
+                return v
+        else:
+            return None
+
+    def getTheEdgesFromVertex(self, vert):
+
+        originalEdgeSelection = self.GetSelectedEdges()
+
+        for edge in originalEdgeSelection:
+            edge.deselect()
+
+        for v in vert.vertices:
+            v.select()
+
+        lx.eval('select.convert edge')
+
+        connectedEdges = self.GetSelectedEdges()
+
+        for edge in connectedEdges:
+            edge.deselect()
+        if len(originalEdgeSelection) == 0:
+            lx.eval('select.drop edge')
+            lx.eval('select.typeFrom vertex;edge;polygon;item;pivot;center;ptag true')
+        else:
+            i = 0
+            param = True
+            for edge in originalEdgeSelection:
+                if i == 1:
+                    param = False
+
+                edge.select(replace=param)
+                i += 1
+
+        vert.select(replace=True)
+
+        return connectedEdges
+
+    def GetTheNumberOfEdgesFromVertex(self, vert):
+        return len(self.getTheEdgesFromVertex(vert))
 
     def GetTheOtherFaceOfAnEdge(self, edgeID, faceID):
         pass
