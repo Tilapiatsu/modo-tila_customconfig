@@ -153,16 +153,20 @@ class MorphMapCreator(MorphToSelected):
         if morphMapName is None:
             self.morphMap = self.getSelectedMorphMap()
 
+        # Use Selected Morphmap
         if self.morphMap is None and morphMapName is not None:
             self.mm.info("Try to select by morphMapName")
             self.morphMap = self.getMorphMapByName(morphMapName)
 
         if self.morphMap is None:
             destinationMorphMap = self.source.geometry.vmaps[self.morphMapDefaultName]
+            # Select a morphmap based on self.morphMapDefaultName
             if len(destinationMorphMap) != 0:
                 self.mm.info("Using existing morphmap called '{}'".format(
                     self.morphMapDefaultName))
                 self.morphMap = destinationMorphMap[0]
+
+            # Create a New Morph Map called self.morphMapDefaultName
             else:
                 self.mm.info("Create a new morphmap called '{}'".format(
                     self.morphMapDefaultName))
@@ -210,4 +214,4 @@ class MorphMapCreator(MorphToSelected):
 
     def moveVertToPosition(self, vertexID, destinationCoorinate):
         # print vertexID, self.morphMap, destinationCoorinate
-        self.morphMap[vertexID] = destinationCoorinate
+        self.morphMap.setAbsolutePosition(vertexID, destinationCoorinate)
