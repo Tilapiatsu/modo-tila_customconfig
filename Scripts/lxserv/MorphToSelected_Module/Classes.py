@@ -5,6 +5,7 @@ import MorphToSelected_Module as m
 
 class MessageManagement():
     prefix = m.TILA_MESSAGEPREFIX
+    debugMode = True
 
     def __init__(self):
         pass
@@ -25,6 +26,14 @@ class MessageManagement():
             if return_result:
                 return lx.eval('dialog.result ?')
 
+    def debug(func):
+        def func_wrapper(self, message, dialog=False):
+            if self.debugMode:
+                message = '{} : {} '.format('DEBUG_MODE', message)
+                return func(self, message, dialog)
+        return func_wrapper
+
+    @debug
     def info(self, message, dialog=False):
         if dialog:
             self.init_message('info', 'info', message)
@@ -32,6 +41,7 @@ class MessageManagement():
             message = '{} : {} '.format(self.prefix, message)
             lx.out(message)
 
+    @debug
     def warning(self, message, dialog=False):
         if dialog:
             self.init_message('warning', 'warning', message)
@@ -39,6 +49,7 @@ class MessageManagement():
             message = '{} : {} '.format(self.prefix, message)
             lx.out(message)
 
+    @debug
     def error(self, message, dialog=False):
         if dialog:
             self.init_message('error', 'error', message)
@@ -63,9 +74,17 @@ class MorphToSelected():
     def Morph(self, args=None):
         self.getSourceDestination(args)
 
-        morphMapCreator = MorphMapCreator()
+        # morphMapCreator = MorphMapCreator()
 
-        morphMapCreator.morphToDestination()
+        # morphMapCreator.morphToDestination()
+        # self.mm.debugMode = False
+
+        topology = Topology(self.source)
+
+        selectedEdges = topology.GetSelectedEdges()
+        print selectedEdges
+
+        print topology.GetUniqueFaceIdByEdges(selectedEdges)
 
     def getSourceDestination(self, args):
         if args is not None:
@@ -80,21 +99,83 @@ class MorphToSelected():
 
 
 class Topology(MorphToSelected):
-    def __init__(self):
+    def __init__(self, mesh):
 
-        self.Mesh = None
+        self.Mesh = mesh
 
     def GetSelectedEdges(self):
-        pass
+        # Edge component Mode
+        sel_svc = lx.service.Selection()
+        layer_svc = lx.service.Layer()
+        layer_scan = lx.object.LayerScan(layer_svc.ScanAllocate(
+            lx.symbol.f_LAYERSCAN_ACTIVE | lx.symbol.f_LAYERSCAN_MARKALL))
+        if not layer_scan.test():
+            return None
+
+        edge_pkt_trans = lx.object.EdgePacketTranslation(
+            sel_svc.Allocate(lx.symbol.sSELTYP_EDGE))
+        sel_type_edge = sel_svc.LookupType(lx.symbol.sSELTYP_EDGE)
+
+        selectedEdgeCount = sel_svc.Count(sel_type_edge)
+
+        mesh_loc = lx.object.Mesh(layer_scan.MeshBase(0))
+        if not mesh_loc.test():
+            return None
+
+        polygon_loc = lx.object.Polygon(mesh_loc.PolygonAccessor())
+        if not polygon_loc.test():
+            return None
+
+        edge_loc = lx.object.Edge(mesh_loc.EdgeAccessor())
+        if not edge_loc.test():
+            return None
+
+        meshmap_loc = lx.object.MeshMap(mesh_loc.MeshMapAccessor())
+        if not meshmap_loc.test():
+            return None
+
+        if selectedEdgeCount == 0:
+            # Return if there are no edges selected.
+            self.mm.error('select at least one edge')
+            return None
+
+        selectedEdges = []
+        for i in xrange(selectedEdgeCount):
+            # Get a packet representing this edge.
+            pkt = sel_svc.ByIndex(sel_type_edge, i)
+
+            selectedEdges.append(pkt)
+
+        return selectedEdges
 
     def GetSelectedVertices(self):
-        pass
+        return self.Mesh.geometry.vertices.selected
 
     def GetSelectedFaces(self):
-        pass
+        return self.Mesh.geometry.polygons.selected
 
     def GetUniqueFaceIdByEdges(self, edgeList):
-        pass
+        if len(edgeList) != 2:
+            self.mm.error('Need two edges ID in the list')
+            print len(edgeList)
+            for e in edgeList:
+                self.mm.error(e)
+            return None
+
+        polyList1 = edgeList[0].polygons
+        polyList2 = edgeList[1].polygons
+
+        if len(polyList1) == 1:
+            return polyList1[0]
+
+        if len(polyList2) == 1:
+            return polyList2[0]
+
+        for poly in polyList1:
+            if poly in polyList2:
+                return poly
+        else:
+            self.mm.error('No common Polygon Found')
 
     def GetUniqueVertexIdByEdge(self, edgeList):
         pass
