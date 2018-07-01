@@ -103,10 +103,22 @@ class MorphToSelected():
         #     lx.eval('select.typeFrom vertex;edge;polygon;item;pivot;center;ptag true')
         #     otherVertex.select(replace=True)
 
-        numberEdges = topology.GetTheNumberOfEdgesFromVertex(
-            topology.GetSelectedVertices()[0])
+        # numberEdges = topology.GetTheNumberOfEdgesFromVertex(
+        #     topology.GetSelectedVertices()[0])
 
-        print numberEdges
+        # print numberEdges
+
+        # otherFace = topology.GetTheOtherFaceOfAnEdge(
+        #     topology.GetSelectedEdges()[0], topology.GetSelectedFaces()[0])
+
+        # if otherFace is not None:
+        #     lx.eval('select.drop polygon')
+        #     otherFace.select(replace=False)
+
+        # list = topology.GetOrderedEdgeList(topology.GetSelectedFaces(
+        # )[0], topology.GetSelectedEdges()[0], topology.GetSelectedVertices()[0])
+
+        # print list
 
     def getSourceDestination(self, args):
         if args is not None:
@@ -247,11 +259,54 @@ class Topology(MorphToSelected):
     def GetTheNumberOfEdgesFromVertex(self, vert):
         return len(self.getTheEdgesFromVertex(vert))
 
-    def GetTheOtherFaceOfAnEdge(self, edgeID, faceID):
-        pass
+    def GetTheOtherFaceOfAnEdge(self, edge, poly):
+        polygonList = edge.polygons
+        if len(polygonList) == 1:
+            return None
+        for p in polygonList:
+            if p != poly:
+                return p
+        else:
+            return None
 
-    def GetOrderedEdgeList(self, faceID, edgeID, vertID):
-        pass
+    def GetOrderedEdgeList(self, face, edge, vert):
+        outputlist = []
+
+        edgelist = list(face.edges)
+
+        edgePos = [e for e in edgelist if e == edge][0]
+
+        if e not in edgelist:
+            self.mm.error("Edge doesn't belong to polygon", True)
+            sys.exit()
+
+        vertices = edge.vertices
+
+        if vert not in vertices:
+            self.mm.error("vertex doesn't belong to edge", True)
+            sys.exit()
+
+        outputlist.append(edge)
+        edgelist.remove(edgePos)
+        attempt = 0
+        while len(edgelist) > 1:
+            vert = self.GetTheOtherVertexOfAnEdge(edge, vert)
+            notFound = True
+            for otherEdge in edgelist:
+                if notFound:
+                    othervertlist = otherEdge.vertices
+                    if vert in othervertlist:
+                        edge = otherEdge
+                        notFound = False
+                        break
+            outputlist.append(edge)
+            edgelist.remove(edge)
+
+            attempt += 1
+
+        outputlist.append(edgelist[0])
+
+        return outputlist
 
     def GetOrderedVerticesFromOrderedEdgeList(self, edgeList, vertID):
         pass
