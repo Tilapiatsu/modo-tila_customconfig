@@ -120,6 +120,11 @@ class MorphToSelected():
 
         # print list
 
+        list = topology.GetOrderedVerticesFromOrderedEdgeList(
+            topology.GetSelectedEdges(), topology.GetSelectedVertices()[0])
+
+        print list
+
     def getSourceDestination(self, args):
         if args is not None:
             i = 0
@@ -308,8 +313,21 @@ class Topology(MorphToSelected):
 
         return outputlist
 
-    def GetOrderedVerticesFromOrderedEdgeList(self, edgeList, vertID):
-        pass
+    def GetOrderedVerticesFromOrderedEdgeList(self, edgelist, vert):
+        vertices = [v for v in edgelist[0].vertices]
+        if len(vertices) == 0:
+            self.mm.error("vertex doesn't belong to edge")
+            sys.exit()
+
+        outputlist = [vert]
+
+        # add all vertices to the list in order
+
+        for e in edgelist:
+            vert = self.GetTheOtherVertexOfAnEdge(e, vert)
+            outputlist.append(vert)
+
+        return outputlist
 
 
 class PolygonMapping(MorphToSelected):
