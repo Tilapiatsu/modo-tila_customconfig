@@ -1,5 +1,6 @@
 import lx
 import modo
+import sys
 import MorphToSelected_Module as m
 
 
@@ -28,9 +29,9 @@ class MessageManagement():
 
     def debug(func):
         def func_wrapper(self, message, dialog=False):
-            if self.debugMode:
+            if self.debugMode and not dialog:
                 message = '{} : {} '.format('DEBUG_MODE', message)
-                return func(self, message, dialog)
+            return func(self, message, dialog)
         return func_wrapper
 
     @debug
@@ -83,11 +84,17 @@ class MorphToSelected():
 
         selectedEdges = topology.GetSelectedEdges()
 
-        commonFace = topology.GetUniqueFaceIdByEdges(selectedEdges)
+        # commonFace = topology.GetUniqueFaceIdByEdges(selectedEdges)
 
-        if commonFace is not None:
-            lx.eval('select.typeFrom polygon;edge;vertex;item;pivot;center;ptag true')
-            commonFace.select()
+        # if commonFace is not None:
+        #     lx.eval('select.typeFrom polygon;edge;vertex;item;pivot;center;ptag true')
+        #     commonFace.select()
+
+        commonVertex = topology.GetUniqueVertexIdByEdge(selectedEdges)
+
+        if commonVertex is not None:
+            lx.eval('select.typeFrom vertex;edge;polygon;item;pivot;center;ptag true')
+            commonVertex.select()
 
     def getSourceDestination(self, args):
         if args is not None:
@@ -135,7 +142,6 @@ class Topology(MorphToSelected):
     def GetUniqueFaceIdByEdges(self, edgeList):
         if len(edgeList) != 2:
             self.mm.error('Need two edges ID in the list')
-            print len(edgeList)
             for e in edgeList:
                 self.mm.error(e)
             return None
@@ -156,7 +162,33 @@ class Topology(MorphToSelected):
             self.mm.error('No common Polygon Found')
 
     def GetUniqueVertexIdByEdge(self, edgeList):
-        pass
+        if len(edgeList) != 2:
+            self.mm.error('Please select 2 edges', True)
+            for e in edgeList:
+                self.mm.error(e)
+            return None
+
+        vertexList1 = edgeList[0].vertices
+        vertexList2 = edgeList[1].vertices
+
+        if len(vertexList1) == 1:
+            return vertexList1[0]
+
+        if len(vertexList2) == 1:
+            return vertexList2[0]
+
+        vertexList2ID = [v.id for v in vertexList2]
+        vertex2Position = [v.position for v in vertexList2]
+        for vert in vertexList1:
+            if vert.position in vertex2Position:
+                print vert.position, vertex2Position
+                print vert.id, vertexList2ID
+                return vert
+        else:
+            self.mm.error('No common vertices found')
+            for e in edgeList:
+                self.mm.error(e.id)
+            return None
 
     def GetTheOtherVertexOfAnEdge(self, edgeID, vertID):
         pass
