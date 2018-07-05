@@ -71,6 +71,8 @@ class MorphToSelected():
         self.scn = modo.Scene()
 
         self.getSourceDestination(args)
+        self.src_topology = Topology(self.source)
+        self.dst_topology = Topology(self.destination)
 
     def Morph(self, args=None):
         self.getSourceDestination(args)
@@ -80,9 +82,52 @@ class MorphToSelected():
         # morphMapCreator.morphToDestination()
         # self.mm.debugMode = False
 
-        topology = Topology(self.source)
+        src_selectedVerts = self.src_topology.GetSelectedVertices()
+        src_selectedEdges = self.src_topology.GetSelectedEdges()
+        src_selectedFaces = self.src_topology.GetSelectedFaces()
 
-        selectedEdges = topology.GetSelectedEdges()
+        dst_selectedVerts = self.dst_topology.GetSelectedVertices()
+        dst_selectedEdges = self.dst_topology.GetSelectedEdges()
+        dst_selectedFaces = self.dst_topology.GetSelectedFaces()
+
+        allowToContinue = True
+
+        if len(src_selectedVerts) != 1:
+            self.mm.error('Please Select one vertex on the soucre Mesh', True)
+            allowToContinue = False
+        if len(src_selectedEdges) != 1:
+            self.mm.error('Please Select one edge on the soucre Mesh', True)
+            allowToContinue = False
+        if len(src_selectedFaces) != 1:
+            self.mm.error('Please Select one face on the soucre Mesh', True)
+            allowToContinue = False
+
+        if len(dst_selectedVerts) != 1:
+            self.mm.error(
+                'Please Select one vertex on the destination Mesh', True)
+            allowToContinue = False
+        if len(dst_selectedEdges) != 1:
+            self.mm.error(
+                'Please Select one edge on the destination Mesh', True)
+            allowToContinue = False
+        if len(dst_selectedFaces) != 1:
+            self.mm.error(
+                'Please Select one face on the destination Mesh', True)
+            allowToContinue = False
+
+        if not allowToContinue:
+            return None
+
+        meshCompare = PolygonMapping()
+
+        meshCompare.Compute(src_selectedFaces[0], src_selectedEdges[0], src_selectedVerts[0],
+                            dst_selectedFaces[0], dst_selectedEdges[0], dst_selectedVerts[0])
+
+        mappedList = meshCompare.GetMappedList()
+        print mappedList
+
+        morphMapCreator = MorphMapCreator()
+        morphMapCreator.morphToDestination(mappedList[0], mappedList[1])
 
         # commonFace = topology.GetUniqueFaceIdByEdges(selectedEdges)
 
@@ -120,10 +165,10 @@ class MorphToSelected():
 
         # print list
 
-        list = topology.GetOrderedVerticesFromOrderedEdgeList(
-            topology.GetSelectedEdges(), topology.GetSelectedVertices()[0])
+        # list = topology.GetOrderedVerticesFromOrderedEdgeList(
+        #     topology.GetSelectedEdges(), topology.GetSelectedVertices()[0])
 
-        print list
+        # print list
 
     def getSourceDestination(self, args):
         if args is not None:
@@ -279,9 +324,9 @@ class Topology(MorphToSelected):
 
         edgelist = list(face.edges)
 
-        edgePos = [e for e in edgelist if e == edge][0]
+        edgePos = [e for e in edgelist if e == edge]
 
-        if e not in edgelist:
+        if len(edgePos) == 0:
             self.mm.error("Edge doesn't belong to polygon", True)
             sys.exit()
 
@@ -292,7 +337,7 @@ class Topology(MorphToSelected):
             sys.exit()
 
         outputlist.append(edge)
-        edgelist.remove(edgePos)
+        edgelist.remove(edgePos[0])
         attempt = 0
         while len(edgelist) > 1:
             vert = self.GetTheOtherVertexOfAnEdge(edge, vert)
@@ -330,34 +375,200 @@ class Topology(MorphToSelected):
         return outputlist
 
 
+# private function don't call this function!
+# use the "Compute" function
+# it will compute this face and put on the stack all the faces to compute next
+# param facedata: the tuple of src and dst data
 class PolygonMapping(MorphToSelected):
     def __init__(self):
         MorphToSelected.__init__(self)
 
-        self.FaceList = ()
+        self.FaceList = []
         self.SrcFaceDone = {}
         self.DstFaceDone = {}
-        self.MappedVertexSrcToDst = ()
-        self.MappedVertexDstToSrc = ()
-        self.MappedVertexTuple = ()
+        self.MappedVertexSrcToDst = {}
+        self.MappedVertexDstToSrc = {}
+        self.MappedVertexTuple = []
 
     def Private_ComputeFace(self, facedata):
-        pass
 
-    def Compute(self, srcFaceID, srcEdgeID, srcVertID, dstFaceID, dstEdgeID, dstVertID, progr):
-        pass
+        srcFace = facedata[0]
+        dstFace = facedata[1]
 
+        allowToContinue = True
+        # make sure we haven't computed this already
+
+        if srcFace[0].index in self.SrcFaceDone.keys():
+            if self.SrcFaceDone[srcFace[0].index]:
+                allowToContinue = False
+
+        if dstFace[0].index in self.DstFaceDone.keys():
+            if self.DstFaceDone[dstFace[0].index]:
+                allowToContinue = False
+
+        # save the fact that we've done this face
+        self.SrcFaceDone[srcFace[0].index] = True
+        self.DstFaceDone[dstFace[0].index] = True
+
+        # stop if needed
+        if not allowToContinue:
+            return None
+
+        # let's get the ordered list for both source and destination
+        sourceEdgeOrdered = self.src_topology.GetOrderedEdgeList(
+            srcFace[0], srcFace[1], srcFace[2])
+        destinationEdgeOrdered = self.dst_topology.GetOrderedEdgeList(
+            dstFace[0], dstFace[1], dstFace[2])
+
+        # check if we have the same number of edges
+        if len(sourceEdgeOrdered) == len(destinationEdgeOrdered):
+
+            # we can save the mapping of these
+            sourceVertexOrdered = self.src_topology.GetOrderedVerticesFromOrderedEdgeList(
+                sourceEdgeOrdered, srcFace[2])
+            destinationVertexOrdered = self.dst_topology.GetOrderedVerticesFromOrderedEdgeList(
+                destinationEdgeOrdered, dstFace[2])
+
+            cnt = len(sourceVertexOrdered)
+
+            # check if any vert is already mapped to a value.
+            # if it is we check if it's mapped to the same value
+            allowToContinue = True
+            for i in xrange(cnt):
+                if allowToContinue:
+                    srcVert = sourceVertexOrdered[i]
+                    dstVert = destinationVertexOrdered[i]
+
+                    # print sourceVertexOrdered
+                    # print srcVert.index
+                    # print dstVert.index
+                    # print self.MappedVertexSrcToDst
+
+                    if str(srcVert.index) in self.MappedVertexSrcToDst.keys() and self.MappedVertexSrcToDst[str(srcVert.index)] != dstVert:
+                        allowToContinue = False
+
+                    if str(dstVert.index) in self.MappedVertexDstToSrc.keys() and self.MappedVertexDstToSrc[str(dstVert.index)] != srcVert:
+                        allowToContinue = False
+
+            # if we have to stop we return
+            if not allowToContinue:
+                return None
+
+            for i in xrange(cnt):
+                srcVert = sourceVertexOrdered[i]
+                dstVert = destinationVertexOrdered[i]
+
+                self.MappedVertexSrcToDst[str(srcVert.index)] = dstVert
+                self.MappedVertexDstToSrc[str(dstVert.index)] = srcVert
+
+            # we can add the connected faces
+            for i in xrange(cnt - 1):
+                srcVert = sourceVertexOrdered[i]
+                dstVert = destinationVertexOrdered[i]
+                srcVert2 = sourceVertexOrdered[i + 1]
+                dstVert2 = destinationVertexOrdered[i + 1]
+
+                srcEdge = sourceEdgeOrdered[i]
+                dstEdge = destinationEdgeOrdered[i]
+
+                # find connected face
+                srcF = self.src_topology.GetTheOtherFaceOfAnEdge(
+                    srcEdge, srcFace[0])
+                dstF = self.dst_topology.GetTheOtherFaceOfAnEdge(
+                    dstEdge, dstFace[0])
+
+                # we will do this face only if they both exists
+                if srcF is not None and dstF is not None:
+                    # we add this face only if we are growing along an edge connected two vertices that are connected to the same amout of edges
+                    if self.src_topology.GetTheNumberOfEdgesFromVertex(srcVert) == self.dst_topology.GetTheNumberOfEdgesFromVertex(dstVert) or self.src_topology.GetTheNumberOfEdgesFromVertex(srcVert2) == self.dst_topology.GetTheNumberOfEdgesFromVertex(dstVert2):
+                        self.FaceList.append([[srcFace, srcEdge, srcVert],
+                                              [dstFace, dstEdge, dstVert]])
+
+    # compute the mapping between the two poly
+    def Compute(self, srcFace, srcEdge, srcVert, dstFace, dstEdge, dstVert, progress=None):
+
+        # get the number of faces
+        nbFaces = len(self.source.geometry.polygons)
+        faceIncrement = 0
+
+        # get the first face
+        srcFace = [srcFace, srcEdge, srcVert]
+        dstFace = [dstFace, dstEdge, dstVert]
+
+        # add this face to the list of faces to do
+        self.FaceList.append([srcFace, dstFace])
+
+        # let's do all the list of faces
+        for face in self.FaceList:
+            self.Private_ComputeFace(face)
+
+            faceIncrement += 1
+
+            if progress is not None:
+                val = (25 * faceIncrement) / nbFaces
+                progress.value = val
+
+        if progress is not None:
+            progress.value = 100
+
+        # we've build the list, let's create the tupple list
+        cnt = len(self.MappedVertexSrcToDst)
+        for i in xrange(cnt):
+            if self.MappedVertexSrcToDst[i] is not None:
+                tuple = [i, self.MappedVertexSrcToDst[i]]
+                self.MappedVertexTuple.append(tuple)
+
+    # get mapped list
+    # return the mapped tupple list between source and destination
     def GetMappedList(self):
-        pass
+        vertList = []
+        srcToDstList = []
+        for v in self.MappedVertexTuple:
+            if self.MappedVertexSrcToDst[v.index] is not None:
+                vertList.append(v)
+                srcToDstList.append(self.MappedVertexSrcToDst[v.index])
+        return [vertList, srcToDstList]
 
+    # get mapped list
+        # return the mapped tupple list of only the selected vertex in the source
     def GetMappedListForSourceVertexSelection(self):
-        pass
+        thelist = []
+        sel = self.source.GetSelectedVertices()
+        for s in sel:
+            if self.MappedVertexSrcToDst[s.index] is not None:
+                tuple = [s, self.MappedVertexSrcToDst[s.index]]
+                thelist.append(tuple)
 
+        return thelist
+
+    # get mapped list
+    # return the mapped tupple list of only the selected vertex in the source
     def GetMappedListForDestinationVertexSelection(self):
-        pass
+        thelist = []
+        sel = self.destination.GetSelectedVertices()
+        for s in sel:
+            if self.MappedVertexDstToSrc[s.index] is not None:
+                tuple = [self.MappedVertexSrcToDst[s.index], s]
+                thelist.append(tuple)
 
+        return thelist
+
+    # invert a mapped list
+    # this return a tuple with destination source instead of source destination
     def InvertMappedList(self, inputMappedList):
-        pass
+        outputList = []
+        for tupple in inputMappedList:
+            newTupple = [tupple[1], tupple[0]]
+            outputList.append(newTupple)
+
+        return outputList
+
+
+class PolyPosition(MorphToSelected):
+    def __init__(self, compare=None):
+        MorphToSelected.__init__(self)
+
+        self.compare = compare
 
 
 class MorphMapCreator(MorphToSelected):
@@ -414,13 +625,19 @@ class MorphMapCreator(MorphToSelected):
 
         return self.source.geometry.vmaps[name][0]
 
-    def morphToDestination(self):
-        i = 0
-        destVertices = self.destination.geometry.vertices
-        matrixObject = self.destination.channel('worldMatrix').get()
-        matrix = modo.Matrix4(matrixObject)
+    def morphToDestination(self, source=None, destination=None):
 
-        for v in self.source.geometry.vertices:
+        if destination is None:
+            destVertices = self.destination.geometry.vertices
+        else:
+            destVertices = destination
+
+        if source is None:
+            srcVertices = self.source.geometry.vertices
+        else:
+            srcVertices = source
+        i = 0
+        for v in srcVertices:
             destPos = modo.mathutils.Vector3(destVertices[i].position)
             self.moveVertToPosition(i, destPos)
             i += 1
