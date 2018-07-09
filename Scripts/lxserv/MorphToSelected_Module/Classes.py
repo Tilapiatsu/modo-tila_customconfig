@@ -74,6 +74,14 @@ class MorphToSelected():
         self.src_topology = Topology(self.source)
         self.dst_topology = Topology(self.destination)
 
+        self.src_selectedVerts = self.src_topology.GetSelectedVertices()
+        self.src_selectedEdges = self.src_topology.GetSelectedEdges()
+        self.src_selectedFaces = self.src_topology.GetSelectedFaces()
+
+        self.dst_selectedVerts = self.dst_topology.GetSelectedVertices()
+        self.dst_selectedEdges = self.dst_topology.GetSelectedEdges()
+        self.dst_selectedFaces = self.dst_topology.GetSelectedFaces()
+
     def Morph(self, args=None):
         self.getSourceDestination(args)
 
@@ -82,35 +90,29 @@ class MorphToSelected():
         # morphMapCreator.morphToDestination()
         # self.mm.debugMode = False
 
-        src_selectedVerts = self.src_topology.GetSelectedVertices()
-        src_selectedEdges = self.src_topology.GetSelectedEdges()
-        src_selectedFaces = self.src_topology.GetSelectedFaces()
-
-        dst_selectedVerts = self.dst_topology.GetSelectedVertices()
-        dst_selectedEdges = self.dst_topology.GetSelectedEdges()
-        dst_selectedFaces = self.dst_topology.GetSelectedFaces()
+        
 
         allowToContinue = True
 
-        if len(src_selectedVerts) != 1:
+        if len(self.src_selectedVerts) != 1:
             self.mm.error('Please Select one vertex on the soucre Mesh', True)
             allowToContinue = False
-        if len(src_selectedEdges) != 1:
+        if len(self.src_selectedEdges) != 1:
             self.mm.error('Please Select one edge on the soucre Mesh', True)
             allowToContinue = False
-        if len(src_selectedFaces) != 1:
+        if len(self.src_selectedFaces) != 1:
             self.mm.error('Please Select one face on the soucre Mesh', True)
             allowToContinue = False
 
-        if len(dst_selectedVerts) != 1:
+        if len(self.dst_selectedVerts) != 1:
             self.mm.error(
                 'Please Select one vertex on the destination Mesh', True)
             allowToContinue = False
-        if len(dst_selectedEdges) != 1:
+        if len(self.dst_selectedEdges) != 1:
             self.mm.error(
                 'Please Select one edge on the destination Mesh', True)
             allowToContinue = False
-        if len(dst_selectedFaces) != 1:
+        if len(self.dst_selectedFaces) != 1:
             self.mm.error(
                 'Please Select one face on the destination Mesh', True)
             allowToContinue = False
@@ -120,14 +122,18 @@ class MorphToSelected():
 
         meshCompare = PolygonMapping()
 
-        meshCompare.Compute(src_selectedFaces[0], src_selectedEdges[0], src_selectedVerts[0],
-                            dst_selectedFaces[0], dst_selectedEdges[0], dst_selectedVerts[0])
+        meshCompare.Compute(self.src_selectedFaces[0], self.src_selectedEdges[0], self.src_selectedVerts[0],
+                            self.dst_selectedFaces[0], self.dst_selectedEdges[0], self.dst_selectedVerts[0])
 
         mappedList = meshCompare.GetMappedList()
         print mappedList
 
         morphMapCreator = MorphMapCreator()
         morphMapCreator.morphToDestination(mappedList[0], mappedList[1])
+
+        morphMapCreator.selectMorphMap()
+
+        self.revertSelection()
 
         # commonFace = topology.GetUniqueFaceIdByEdges(selectedEdges)
 
@@ -180,6 +186,15 @@ class MorphToSelected():
         else:
             self.source = self.scn.selected[0]
             self.destination = self.scn.selected[1]
+
+    def revertSelection(self):
+        self.src_selectedVerts[0].select(replace=True)
+        self.src_selectedEdges[0].select(replace=True)
+        self.src_selectedFaces[0].select(replace=True)
+
+        self.dst_selectedVerts[0].select()
+        self.dst_selectedEdges[0].select()
+        self.dst_selectedFaces[0].select()
 
 
 class Topology(MorphToSelected):
@@ -255,8 +270,6 @@ class Topology(MorphToSelected):
         vertex2Position = [v.position for v in vertexList2]
         for vert in vertexList1:
             if vert.position in vertex2Position:
-                print vert.position, vertex2Position
-                print vert.id, vertexList2ID
                 return vert
         else:
             self.mm.error('No common vertices found')
@@ -412,6 +425,8 @@ class PolygonMapping(MorphToSelected):
 
         # stop if needed
         if not allowToContinue:
+            self.mm.error('skipping : Face have already been computed')
+            self.revertSelection()
             return None
 
         # let's get the ordered list for both source and destination
@@ -430,6 +445,7 @@ class PolygonMapping(MorphToSelected):
                 destinationEdgeOrdered, dstFace[2])
 
             cnt = len(sourceVertexOrdered)
+            print sourceVertexOrdered
 
             # check if any vert is already mapped to a value.
             # if it is we check if it's mapped to the same value
@@ -439,27 +455,29 @@ class PolygonMapping(MorphToSelected):
                     srcVert = sourceVertexOrdered[i]
                     dstVert = destinationVertexOrdered[i]
 
-                    # print sourceVertexOrdered
-                    # print srcVert.index
-                    # print dstVert.index
-                    # print self.MappedVertexSrcToDst
+                    # srcVert.select(replace=True)
+                    # dstVert.select()
 
-                    if str(srcVert.index) in self.MappedVertexSrcToDst.keys() and self.MappedVertexSrcToDst[str(srcVert.index)] != dstVert:
-                        allowToContinue = False
+                    # if srcVert.index in self.MappedVertexSrcToDst.keys():
+                    #     if self.MappedVertexSrcToDst[srcVert.index] != dstVert:
+                    #         allowToContinue = False
 
-                    if str(dstVert.index) in self.MappedVertexDstToSrc.keys() and self.MappedVertexDstToSrc[str(dstVert.index)] != srcVert:
-                        allowToContinue = False
+                    # if dstVert.index in self.MappedVertexDstToSrc.keys():
+                    #     if self.MappedVertexDstToSrc[dstVert.index] != srcVert:
+                    #         allowToContinue = False
 
             # if we have to stop we return
             if not allowToContinue:
+                self.mm.error('Not allowed to continue 2')
+                self.revertSelection()
                 return None
 
             for i in xrange(cnt):
                 srcVert = sourceVertexOrdered[i]
                 dstVert = destinationVertexOrdered[i]
 
-                self.MappedVertexSrcToDst[str(srcVert.index)] = dstVert
-                self.MappedVertexDstToSrc[str(dstVert.index)] = srcVert
+                self.MappedVertexSrcToDst[srcVert.index] = dstVert
+                self.MappedVertexDstToSrc[dstVert.index] = srcVert
 
             # we can add the connected faces
             for i in xrange(cnt - 1):
@@ -481,8 +499,8 @@ class PolygonMapping(MorphToSelected):
                 if srcF is not None and dstF is not None:
                     # we add this face only if we are growing along an edge connected two vertices that are connected to the same amout of edges
                     if self.src_topology.GetTheNumberOfEdgesFromVertex(srcVert) == self.dst_topology.GetTheNumberOfEdgesFromVertex(dstVert) or self.src_topology.GetTheNumberOfEdgesFromVertex(srcVert2) == self.dst_topology.GetTheNumberOfEdgesFromVertex(dstVert2):
-                        self.FaceList.append([[srcFace, srcEdge, srcVert],
-                                              [dstFace, dstEdge, dstVert]])
+                        self.FaceList.append([[srcF, srcEdge, srcVert],
+                                              [dstF, dstEdge, dstVert]])
 
     # compute the mapping between the two poly
     def Compute(self, srcFace, srcEdge, srcVert, dstFace, dstEdge, dstVert, progress=None):
@@ -492,11 +510,12 @@ class PolygonMapping(MorphToSelected):
         faceIncrement = 0
 
         # get the first face
-        srcFace = [srcFace, srcEdge, srcVert]
-        dstFace = [dstFace, dstEdge, dstVert]
+        srcFaceList = [srcFace, srcEdge, srcVert]
+        dstFaceList = [dstFace, dstEdge, dstVert]
 
         # add this face to the list of faces to do
-        self.FaceList.append([srcFace, dstFace])
+        self.FaceList.append([srcFaceList, dstFaceList])
+        self.mm.info(self.FaceList)
 
         # let's do all the list of faces
         for face in self.FaceList:
@@ -513,9 +532,10 @@ class PolygonMapping(MorphToSelected):
 
         # we've build the list, let's create the tupple list
         cnt = len(self.MappedVertexSrcToDst)
+        keys = self.MappedVertexDstToSrc.keys()
         for i in xrange(cnt):
-            if self.MappedVertexSrcToDst[i] is not None:
-                tuple = [i, self.MappedVertexSrcToDst[i]]
+            if keys[i] is not None:
+                tuple = [keys[i], self.MappedVertexSrcToDst[keys[i]]]
                 self.MappedVertexTuple.append(tuple)
 
     # get mapped list
@@ -524,9 +544,9 @@ class PolygonMapping(MorphToSelected):
         vertList = []
         srcToDstList = []
         for v in self.MappedVertexTuple:
-            if self.MappedVertexSrcToDst[v.index] is not None:
+            if self.MappedVertexSrcToDst[v[0]] is not None:
                 vertList.append(v)
-                srcToDstList.append(self.MappedVertexSrcToDst[v.index])
+                srcToDstList.append(self.MappedVertexSrcToDst[v[0]])
         return [vertList, srcToDstList]
 
     # get mapped list
@@ -608,6 +628,9 @@ class MorphMapCreator(MorphToSelected):
         except:
             self.mm.error("No morph map selected")
             return None
+
+    def selectMorphMap(self):
+        lx.eval('select.vertexMap {} morf replace'.format(self.morphMap.name))
 
     def getMorphMapByName(self, name):
         morphMap = self.source.geometry.vmaps[name]
