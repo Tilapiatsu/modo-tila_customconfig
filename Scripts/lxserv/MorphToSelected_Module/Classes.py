@@ -90,8 +90,6 @@ class MorphToSelected():
         # morphMapCreator.morphToDestination()
         # self.mm.debugMode = False
 
-        
-
         allowToContinue = True
 
         if len(self.src_selectedVerts) != 1:
@@ -126,7 +124,7 @@ class MorphToSelected():
                             self.dst_selectedFaces[0], self.dst_selectedEdges[0], self.dst_selectedVerts[0])
 
         mappedList = meshCompare.GetMappedList()
-        print mappedList
+        # print mappedList
 
         morphMapCreator = MorphMapCreator()
         morphMapCreator.morphToDestination(mappedList[0], mappedList[1])
@@ -476,8 +474,8 @@ class PolygonMapping(MorphToSelected):
                 srcVert = sourceVertexOrdered[i]
                 dstVert = destinationVertexOrdered[i]
 
-                self.MappedVertexSrcToDst[srcVert.index] = dstVert
-                self.MappedVertexDstToSrc[dstVert.index] = srcVert
+                self.MappedVertexSrcToDst[srcVert] = dstVert
+                self.MappedVertexDstToSrc[dstVert] = srcVert
 
             # we can add the connected faces
             for i in xrange(cnt - 1):
@@ -532,9 +530,13 @@ class PolygonMapping(MorphToSelected):
 
         # we've build the list, let's create the tupple list
         cnt = len(self.MappedVertexSrcToDst)
-        keys = self.MappedVertexDstToSrc.keys()
+        keys = self.MappedVertexSrcToDst.keys()
+
         for i in xrange(cnt):
+
             if keys[i] is not None:
+                print keys[i], keys
+                print self.MappedVertexSrcToDst[keys[i]]
                 tuple = [keys[i], self.MappedVertexSrcToDst[keys[i]]]
                 self.MappedVertexTuple.append(tuple)
 
