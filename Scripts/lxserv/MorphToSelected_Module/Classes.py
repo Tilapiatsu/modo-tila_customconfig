@@ -118,7 +118,44 @@ class MorphToSelected():
             allowToContinue = False
 
         if not allowToContinue:
-            return None
+            return False
+
+        '''
+        allPolygon = list(self.source.geometry.polygons)
+        # allEdge = self.source.geometry.edges
+        # allVert = self.source.geometry.vertices
+
+        
+        while len(allPolygon) > 0:
+            print len(allPolygon)
+
+            otherFace = self.src_topology.GetTheOtherFaceOfAnEdge(
+                self.src_selectedEdges[0], self.src_selectedFaces[0])
+
+            if otherFace is not None:
+                allPolygon.remove(self.src_selectedFaces[0])
+
+                connectedEdges = otherFace.edges
+                for e in connectedEdges:
+                    if e is not self.src_selectedEdges[0]:
+                        otherEdge = e
+                        connectedVerts = otherEdge.vertices
+                        for v in connectedVerts:
+                            if v is not self.src_selectedVerts[0]:
+                                othervert = v
+                                break
+
+                otherFace.select(replace=True)
+                othervert.select(replace=True)
+                otherEdge.select(replace=True)
+
+                self.src_selectedVerts = self.src_topology.GetSelectedVertices()
+                self.src_selectedEdges = self.src_topology.GetSelectedEdges()
+                self.src_selectedFaces = self.src_topology.GetSelectedFaces()
+
+                self.mm.breakPoint()
+
+        '''
 
         meshCompare = PolygonMapping()
 
@@ -233,7 +270,7 @@ class Topology(MorphToSelected):
 
     def GetUniqueFaceIdByEdges(self, edgeList):
         if len(edgeList) != 2:
-            self.mm.error('Need two edges ID in the list')
+            self.mm.error('Need two edges in the list')
             for e in edgeList:
                 self.mm.error(e)
             return None
@@ -327,11 +364,10 @@ class Topology(MorphToSelected):
 
     def GetTheOtherFaceOfAnEdge(self, edge, poly):
         polygonList = edge.polygons
-        if len(polygonList) == 1:
-            return None
-        for p in polygonList:
-            if p != poly:
-                return p
+        if len(polygonList) > 1:
+            for p in polygonList:
+                if p.index != poly.index:
+                    return p
         else:
             return None
 
@@ -358,13 +394,13 @@ class Topology(MorphToSelected):
 
         if edge not in edgelist:
             self.mm.error("Edge doesn't belong to polygon", True)
-            sys.exit()
+            return None
 
         vertexList = edge.vertices
 
         if vert not in vertexList:
             self.mm.error("vertex doesn't belong to edge", True)
-            sys.exit()
+            return None
 
         outputlist.append(edge)
         edgelist.remove(edge)
@@ -382,7 +418,8 @@ class Topology(MorphToSelected):
                     if vert in othervertlist:
                         edge = otherEdge
                         notFound = False
-                        continue
+                else:
+                    break
 
             # add the element to the list
             outputlist.append(edge)
@@ -427,6 +464,7 @@ class PolygonMapping(MorphToSelected):
         self.MappedVertexTuple = []
 
     def Private_ComputeFace(self, facedata):
+        self.iter += 1
 
         srcFace = facedata[0]
         dstFace = facedata[1]
@@ -434,22 +472,25 @@ class PolygonMapping(MorphToSelected):
         allowToContinue = True
 
         # make sure we haven't computed this already
-        if srcFace[0].index in self.SrcFaceDone.keys():
-            if self.SrcFaceDone[srcFace[0].index]:
+        try:
+            if self.SrcFaceDone[srcFace[0]]:
                 allowToContinue = False
 
-        if dstFace[0].index in self.DstFaceDone.keys():
-            if self.DstFaceDone[dstFace[0].index]:
+            if self.DstFaceDone[dstFace[0]]:
                 allowToContinue = False
+
+        except KeyError:
+            pass
 
         # save the fact that we've done this face
-        self.SrcFaceDone[srcFace[0].index] = True
-        self.DstFaceDone[dstFace[0].index] = True
+        self.SrcFaceDone[srcFace[0]] = True
+        self.DstFaceDone[dstFace[0]] = True
 
         # stop if needed
         if not allowToContinue:
-            # self.mm.error('skipping : Face have already been computed')
-            self.revertSelection()
+            self.mm.error(
+                'skipping : Face {} have already been computed'.format(srcFace[0]))
+            # self.revertSelection()
             return None
 
         # let's get the ordered list for both source and destination
@@ -476,14 +517,16 @@ class PolygonMapping(MorphToSelected):
                 srcVert = sourceVertexOrdered[i]
                 dstVert = destinationVertexOrdered[i]
 
-                # if srcVert.index in self.MappedVertexSrcToDst.keys():
-                #     if self.MappedVertexSrcToDst[srcVert.index][1] != dstVert:
-                #         allowToContinue = False
-                #         break
+                if srcVert.index in self.MappedVertexSrcToDst.keys():
+                    if self.MappedVertexSrcToDst[srcVert.index][1].index != dstVert.index:
+                        allowToContinue = False
+                        break
 
             # if we have to stop we return
             if not allowToContinue:
-                # self.mm.error('Not allowed to continue 2')
+                self.mm.error('Exit 2 ')
+                # self.mm.error('Vert is already mapped to a value. srcVert {} is mapped to dstVert {}'.format(
+                #     self.MappedVertexSrcToDst[srcVert.index][0].index, self.MappedVertexSrcToDst[srcVert.index][1].index))
                 self.revertSelection()
                 return None
 
@@ -515,6 +558,7 @@ class PolygonMapping(MorphToSelected):
                     if self.src_topology.GetTheNumberOfEdgesFromVertex(srcVert) == self.dst_topology.GetTheNumberOfEdgesFromVertex(dstVert) or self.src_topology.GetTheNumberOfEdgesFromVertex(srcVert2) == self.dst_topology.GetTheNumberOfEdgesFromVertex(dstVert2):
                         self.FaceList.append([[srcF, srcEdge, srcVert],
                                               [dstF, dstEdge, dstVert]])
+                        return True
 
     # compute the mapping between the two poly
     def Compute(self, srcFace, srcEdge, srcVert, dstFace, dstEdge, dstVert, progress=None):
@@ -533,6 +577,11 @@ class PolygonMapping(MorphToSelected):
         # let's do all the list of faces
         for face in self.FaceList:
             self.Private_ComputeFace(face)
+
+            if self.iter > 500:
+                print self.FaceList, self.SrcFaceDone
+
+                sys.exit()
 
             faceIncrement += 1
 
@@ -667,20 +716,27 @@ class MorphMapCreator(MorphToSelected):
     def morphToDestination(self, source=None, destination=None):
 
         if destination is None:
-            destVertices = self.destination.geometry.vertices
+            dstVertices = self.destination.geometry.vertices
         else:
-            destVertices = destination
+            dstVertices = destination
 
         if source is None:
             srcVertices = self.source.geometry.vertices
         else:
             srcVertices = source
 
-        for i in xrange(len(srcVertices)):
-            destPos = modo.mathutils.Vector3(destVertices[i].position)
-            self.moveVertToPosition(srcVertices[i].index, destPos)
+        srcVerticesCount = len(srcVertices)
+        dstVerticesCount = len(dstVertices)
 
-        self.source.geometry.setMeshEdits()
+        if srcVerticesCount == dstVerticesCount:
+            for i in xrange(srcVerticesCount):
+                destPos = modo.mathutils.Vector3(dstVertices[i].position)
+                self.moveVertToPosition(srcVertices[i].index, destPos)
+
+            self.source.geometry.setMeshEdits()
+        else:
+            self.mm.error(
+                "The soure and destination doesn't have the same number of matching vertices \n   Source : {} verts \n   Destination : {} verts".format(srcVerticesCount, dstVerticesCount))
 
     def moveVertToPosition(self, vertexID, destinationCoorinate):
         # print vertexID, self.morphMap, destinationCoorinate
