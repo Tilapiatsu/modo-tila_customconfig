@@ -196,11 +196,11 @@ if __name__ == '__main__':
 
 							lx.eval('select.vertexMap {} morf replace'.format(vertex_map_name))
 							lx.eval('vertMap.bgMorph background')
-							lx.eval('select.vertexMap {} morf 3'.format(vertex_map_name))
-							lx.eval('vertMap.applyMorph {} 1.0'.format(vertex_map_name))
-							lx.eval('select.vertexMap {} morf replace'.format(vertex_map_name))
-							lx.eval('!vertMap.clear morf')
-							lx.eval('!vertMap.delete morf')
+							# lx.eval('select.vertexMap {} morf 3'.format(vertex_map_name))
+							# lx.eval('vertMap.applyMorph {} 1.0'.format(vertex_map_name))
+							# lx.eval('select.vertexMap {} morf replace'.format(vertex_map_name))
+							# lx.eval('!vertMap.clear morf')
+							# lx.eval('!vertMap.delete morf')
 							print_log('Updating {} morph map for {}'.format(vertex_map_name, matching_source_item.name))
 
 							lx.eval('unhide')
