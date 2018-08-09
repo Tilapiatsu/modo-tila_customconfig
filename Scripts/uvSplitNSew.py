@@ -15,7 +15,7 @@ if getSelectionMode() == ModoModes['POLY']:
     lx.eval('select.convert edge')
     lx.eval('uv.sewMove disco true')
 elif getSelectionMode() == ModoModes['EDGE']:
-    lx.eval('uv.sewMove disco true')
+    lx.eval('uv.sew disco false')
 elif getSelectionMode() == ModoModes['VERT']:
     lx.eval('uv.sew disco true')
     
