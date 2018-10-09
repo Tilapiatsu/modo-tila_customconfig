@@ -21,7 +21,7 @@ import traceback
 import sys
 
 
-class CmdApplyMorphToAllMeshes(lxu.command.BasicCommand):
+class CmdApplyCompensateMorphMap(lxu.command.BasicCommand):
 	def __init__(self):
 		lxu.command.BasicCommand.__init__(self)
 
@@ -41,10 +41,10 @@ class CmdApplyMorphToAllMeshes(lxu.command.BasicCommand):
 			hints.Label('Morph amount')
 	
 	def cmd_UserName (self):
- 		return 'Apply morph to all meshes'
+ 		return 'Apply selected morph to base mesh and compensate all other morph maps'
 
 	def cmd_Desc (self):
- 		return 'Apply morph map to the selected morph map in all meshes in the scene.'
+ 		return 'Apply selected morph to base mesh and compensate all other morph maps.'
 
 	@staticmethod
 	def init_message(type='info', title='info', message='info'):
@@ -82,7 +82,7 @@ class CmdApplyMorphToAllMeshes(lxu.command.BasicCommand):
 
 	def printLog(self, message):
 		if self.debug:
-			lx.out('SwitchMshToSelectedMorph : {}'.format(message))
+			lx.out('ApplyCompensateMorphMap : {}'.format(message))
 
 	def getSelectedMorphMap(self):
 		try:
@@ -94,20 +94,27 @@ class CmdApplyMorphToAllMeshes(lxu.command.BasicCommand):
 			return None
 
 	def applyMorphMap(self, CurrentMorphMapName):
-		meshSelection = self.scn.items('mesh')
-		lx.eval('select.vertexMap {} morf 3'.format(CurrentMorphMapName))
-		for item in meshSelection:
-			item.select(replace=True)
-			vmaps = item.geometry.vmaps
-			morphMaps = vmaps.morphMaps
+		meshSelection = self.initialSelection[0]
 
-			morphMapNames = [m.name for m in morphMaps]
-			if CurrentMorphMapName not in morphMapNames:
-				self.printLog('morphMap {} not in {} item'.format(CurrentMorphMapName, item.name))
-				continue
-			
-			self.printLog('morphMap {} found in {}'.format(CurrentMorphMapName, item.name))
-			lx.eval('vertMap.applyMorph {} {}'.format(CurrentMorphMapName, self.morphAmount))
+		meshSelection.select(replace=True)
+		vmaps = meshSelection.geometry.vmaps
+		morphMaps = vmaps.morphMaps
+
+		morphMapNames = [m.name for m in morphMaps]
+		if CurrentMorphMapName not in morphMapNames:
+			self.printLog('morphMap {} not in {} item'.format(CurrentMorphMapName, meshSelection.name))
+			return
+		
+		# Applying morph to basemesh
+		lx.eval('select.vertexMap {} morf 3'.format(CurrentMorphMapName))
+		lx.eval('vertMap.applyMorph {} {}'.format(CurrentMorphMapName, self.morphAmount))
+
+		# Compensate on all other morph maps
+		for map in morphMaps:
+			if map.name != CurrentMorphMapName:
+				self.printLog('Compensate MorphMap {}'.format(map.name))
+				lx.eval('select.vertexMap {} morf replace'.format(map.name))
+				lx.eval('vertMap.applyMorph {} {}'.format(CurrentMorphMapName, -self.morphAmount))
 
 		else:
 			self.initialSelection[0].select(replace=True)
@@ -146,4 +153,4 @@ class CmdApplyMorphToAllMeshes(lxu.command.BasicCommand):
 		lx.notimpl()
 
 
-lx.bless(CmdApplyMorphToAllMeshes, "tila.applyMorphToAllMeshes")
+lx.bless(CmdApplyCompensateMorphMap, "tila.applyCompensateMorphMap")
