@@ -94,10 +94,10 @@ class CmdSwitchMeshesToSelectedMorph(lxu.command.BasicCommand):
 
     def switchMorphMaps(self, morphMapName):
         if self.selectedItemOnly:
-            meshSelection = [self.initialSelection[0]]
+            meshSelection = self.initialSelection
         else:
             meshSelection = self.scn.items('mesh')
-        i = 0
+
         for item in meshSelection:
             item.select(replace=True)
             vmaps = item.geometry.vmaps
@@ -136,9 +136,15 @@ class CmdSwitchMeshesToSelectedMorph(lxu.command.BasicCommand):
                         # lx.eval('!select.vertexMap {} spot replace'.format(map.name))
                         # lx.eval('!vertMap.applyMorph {} 1.0'.format(morphMapName))
                         # lx.eval('!select.vertexMap {} spot 3'.format(map.name))
-            i += 1
+
         else:
-            self.initialSelection[0].select(replace=True)
+            i=0
+            for item in self.initialSelection:
+                if i==0:
+                    item.select(replace=True)
+                else:
+                    item.select(replace=False)
+            i += 1
             lx.eval('select.vertexMap {} morf 3'.format(morphMapName))
 
     @staticmethod
@@ -158,7 +164,7 @@ class CmdSwitchMeshesToSelectedMorph(lxu.command.BasicCommand):
             if self.dyna_IsSet(0):
                 self.selectedItemOnly = self.dyna_Bool(0)
 
-            self.initialSelection = [self.scn.selectedByType('mesh')[0]]
+            self.initialSelection = self.scn.selectedByType('mesh')
 
             morphMapName = self.getSelectedMorphMap()
 
