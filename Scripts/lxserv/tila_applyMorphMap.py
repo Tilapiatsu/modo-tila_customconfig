@@ -80,9 +80,9 @@ class CmdApplyMorphMap(lxu.command.BasicCommand):
 	def cmd_Interact(self):
 		pass
 
-	def printLog(self, message):
-		if self.debug:
-			lx.out('ApplyCompensateMorphMap : {}'.format(message))
+	def printLog(self, message, force=False):
+		if force or self.debug:
+			lx.out('ApplyMorphMap : {}'.format(message))
 
 	def getSelectedMorphMap(self):
 		try:
@@ -94,20 +94,21 @@ class CmdApplyMorphMap(lxu.command.BasicCommand):
 			return None
 
 	def applyMorphMap(self, CurrentMorphMapName):
-		meshSelection = self.initialSelection[0]
+		for item in self.initialSelection:
 
-		meshSelection.select(replace=True)
-		vmaps = meshSelection.geometry.vmaps
-		morphMaps = vmaps.morphMaps
+			item.select(replace=True)
+			vmaps = item.geometry.vmaps
+			morphMaps = vmaps.morphMaps
 
-		morphMapNames = [m.name for m in morphMaps]
-		if CurrentMorphMapName not in morphMapNames:
-			self.printLog('morphMap {} not in {} item'.format(CurrentMorphMapName, meshSelection.name))
-			return
-		
-		# Applying morph to basemesh
-		lx.eval('select.vertexMap {} morf 3'.format(CurrentMorphMapName))
-		lx.eval('vertMap.applyMorph {} {}'.format(CurrentMorphMapName, self.morphAmount))
+			morphMapNames = [m.name for m in morphMaps]
+			if CurrentMorphMapName not in morphMapNames:
+				self.printLog('MorphMap "{}" not in {} item'.format(CurrentMorphMapName, item.name), force=True)
+				continue
+			
+			# Applying morph to basemesh
+			self.printLog('Applying morph {} to basemesh'.format(CurrentMorphMapName), force=True)
+			lx.eval('select.vertexMap {} morf 3'.format(CurrentMorphMapName))
+			lx.eval('vertMap.applyMorph {} {}'.format(CurrentMorphMapName, self.morphAmount))
 
 	@staticmethod
 	def breakPoint(i, number):
@@ -126,12 +127,21 @@ class CmdApplyMorphMap(lxu.command.BasicCommand):
 			if self.dyna_IsSet(0):
 				self.morphAmount = self.dyna_Float(0)
 
-			self.initialSelection = [self.scn.selectedByType('mesh')[0]]
+			self.initialSelection = self.scn.selectedByType('mesh')
+
+			if len(self.initialSelection)<1:
+				result = self.init_message('yesNo','No mesh selected', 'No mesh selected. \n Do you want to proceed to all mesh items in the scene ?')
+				if result:
+					self.initialSelection = self.scn.items('mesh')
+				else:
+					self.init_message('info', 'Aborded', 'Operation aborded by the user')
+					return
 
 			self.morphMapName = self.getSelectedMorphMap()
 
 			if self.morphMapName is None:
 				self.printLog('No morphMap selected')
+				self.init_message('info', 'No Morph Map selected', 'Select one morph map')
 				return
 
 			self.applyMorphMap(self.morphMapName)
