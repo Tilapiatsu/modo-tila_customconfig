@@ -108,7 +108,6 @@ class CmdApplyMorphMap(lxu.command.BasicCommand):
 				self.printLog('MorphMap "{}" not in {} item'.format(CurrentMorphMapName, item.name), force=True)
 				continue
 			
-			self.printLog(self.morphTarget, force=True)
 			if self.morphTarget is None or self.morphTarget == 'None':
 				# Applying morph to basemesh
 				self.printLog('Applying morph {} to basemesh'.format(CurrentMorphMapName), force=True)
