@@ -25,18 +25,21 @@ class CmdApplyMorphMap(lxu.command.BasicCommand):
 	def __init__(self):
 		lxu.command.BasicCommand.__init__(self)
 
+		self.dyna_Add('morphTarget', lx.symbol.sTYPE_STRING)
+
 		self.dyna_Add('morphAmount', lx.symbol.sTYPE_FLOAT)
-		self.basic_SetFlags(0, lx.symbol.fCMDARG_OPTIONAL)
+		self.basic_SetFlags(1, lx.symbol.fCMDARG_OPTIONAL)
 
 		self.scn = modo.Scene()
 		self.morphMapName = None
+		self.morphTarget = None
 		self.morphAmount = 1.0
 		self.initialSelection = None
 		self.debug = False
 
 	def arg_UIHints (self, index, hints):
 		if index == 0:
-			hints.Label('Source MorphMap')
+			hints.Label('Apply MorphMap to')
 		if index == 1:
 			hints.Label('Morph amount')
 	
@@ -105,10 +108,20 @@ class CmdApplyMorphMap(lxu.command.BasicCommand):
 				self.printLog('MorphMap "{}" not in {} item'.format(CurrentMorphMapName, item.name), force=True)
 				continue
 			
-			# Applying morph to basemesh
-			self.printLog('Applying morph {} to basemesh'.format(CurrentMorphMapName), force=True)
-			lx.eval('select.vertexMap {} morf 3'.format(CurrentMorphMapName))
-			lx.eval('vertMap.applyMorph {} {}'.format(CurrentMorphMapName, self.morphAmount))
+			self.printLog(self.morphTarget, force=True)
+			if self.morphTarget is None or self.morphTarget == 'None':
+				# Applying morph to basemesh
+				self.printLog('Applying morph {} to basemesh'.format(CurrentMorphMapName), force=True)
+				lx.eval('select.vertexMap {} morf 3'.format(CurrentMorphMapName))
+				lx.eval('vertMap.applyMorph {} {}'.format(CurrentMorphMapName, self.morphAmount))
+			elif self.morphTarget in morphMapNames:
+				# Applying morph to basemesh
+				self.printLog('Applying morph {} to {} morph'.format(CurrentMorphMapName, self.morphTarget), force=True)
+				lx.eval('select.vertexMap {} morf replace'.format(self.morphTarget))
+				lx.eval('vertMap.applyMorph {} {}'.format(CurrentMorphMapName, self.morphAmount))
+			else:
+				self.printLog('Morph map {} is not in {}'.format(self.morphTarget, item.name), force=True)
+				continue
 
 	@staticmethod
 	def breakPoint(i, number):
@@ -125,7 +138,10 @@ class CmdApplyMorphMap(lxu.command.BasicCommand):
 				self.scn = modo.Scene()
 
 			if self.dyna_IsSet(0):
-				self.morphAmount = self.dyna_Float(0)
+				self.morphTarget = self.dyna_String(0)
+			
+			if self.dyna_IsSet(1):
+				self.morphAmount = self.dyna_Float(1)
 
 			self.initialSelection = self.scn.selectedByType('mesh')
 
